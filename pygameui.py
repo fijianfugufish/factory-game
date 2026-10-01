@@ -240,6 +240,7 @@ class Image(UI):
         self._w = value
         self.rect.w = value
         self.image = transform.scale(image.convert(), (self.w, self.h))
+        self._OriginalImage = transform.scale(image.convert(), (self.w, self.h))
     
     @property
     def h(self):
@@ -250,6 +251,9 @@ class Image(UI):
         self._h = value
         self.rect.h = value
         self.image = transform.scale(image.convert(), (self.w, self.h))
+    
+    def setFlipped(self, x = False, y = False):
+        self.image = transform.flip(self._OriginalImage, x, y)
     
     def draw(self, window):
         if self.hidden: return
@@ -349,6 +353,18 @@ class AnimatableSprite(Sprite):
         for animation in self.animations:
             for i, frame in enumerate(self._originalAnimations[animation]):
                 frame = transform.rotate(frame, -self._rotation)
+                self.animations[animation][i] = frame
+    
+    def setFlipped(self, x = False, y = False):
+        center = self.rect.center
+        
+        self.image = transform.flip(self._OriginalImage, x, y)
+        
+        self.rect = self.image.get_rect(center = center)
+        
+        for animation in self.animations:
+            for i, frame in enumerate(self._originalAnimations[animation]):
+                frame = transform.flip(frame, x, y)
                 self.animations[animation][i] = frame
     
     @classmethod

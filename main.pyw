@@ -67,6 +67,15 @@ def worldToSreen(worldPos):
 
 def decodeFactoryComponent(factory: fac.Factory, id):
     # component to decode is a transport type
+    
+    # bent transports bend right, they nust be flipped if they turn left
+    leftTurns = {
+        (fac.Directions.North, fac.Directions.West),
+        (fac.Directions.West,  fac.Directions.South),
+        (fac.Directions.South, fac.Directions.East),
+        (fac.Directions.East,  fac.Directions.North),
+    }
+        
     if id in factory.transports:
         transport = factory.transports[id]
         
@@ -107,13 +116,17 @@ def decodeFactoryComponent(factory: fac.Factory, id):
             if transport.type == "ConveyorBelt":
                 position = worldToSreen(turnPos)
                 
-                # check if first transport should bend
+                # check if first or last transport should bend
                 if bent is not None:
                     conveyor = ConveyorBelt(position[0], position[1], id, turnPos, bent = bent)
                     conveyor.rotation = previousDirection.value if bent else turnDir.value
                 else:
                     conveyor = ConveyorBelt(position[0], position[1], id, turnPos, bent = True)
                     conveyor.rotation = previousDirection.value
+                
+                # flip if needed
+                if (previousDirection, turnDir) in leftTurns:
+                    conveyor.setFlipped(y = True)
             else:
                 assert ValueError, "unknown transport type"
             
@@ -180,7 +193,8 @@ def main():
     
     mainFactory.addTransportTurn(conveyor1, [(0, 0), fac.Directions.East])
     mainFactory.addTransportTurn(conveyor1, [(5, 0), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(5, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(5, 2), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(10, 2), fac.Directions.South])
     
     decodeFactoryComponent(mainFactory, conveyor1)
     
