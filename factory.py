@@ -56,6 +56,8 @@ class Transport():
     speed: float
     length: int
     turns: list[list[tuple[int, int] | Directions]] = field(default_factory = list)  # first and last 'turn' define origin and destination
+    initialDirection: Directions = Directions.North
+    finalDirection: Directions = Directions.South
     items: list[list[Items | float]] = field(default_factory = list)
     id: int = 0
     # input: int | None   <- perhaps unnecessary?
@@ -218,7 +220,7 @@ class Factory():
             dx = abs(turnPos[0] - prevTurnPos[0])
             dy = abs(turnPos[1] - prevTurnPos[1])
             
-            cumulativeLength = cumulativeLength + dx + dy
+            cumulativeLength += dx + dy
             
         length = cumulativeLength * 2 + 2
         
@@ -226,6 +228,11 @@ class Factory():
     
     def addTransportTurn(self, transportid: int, turn: list[tuple[int, int] | Directions]): 
         transport = self.transports[transportid]
+        
+        if not transport.turns:
+            transport.initialDirection = turn[1]
+        
+        transport.finalDirection = turn[1]
         
         transport.turns.append(turn)
         
