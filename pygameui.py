@@ -13,7 +13,7 @@ defaultStyle = {
     "lighteningAmount": 1.2,
 }
 
-noTexture = image.load("NoTexture.png")
+noTexture = image.load("NoTexture.png").convert()
 
 def lighten(color, intensity):
     return tuple(min(255, int(c * intensity)) for c in color)
@@ -210,7 +210,7 @@ class Image(UI):
         
         self.hidden = False
         
-        self._image = transform.scale(image.convert_alpha(), (w, h))
+        self._image = transform.scale(image, (w, h))
         self._OriginalImage = self.image
         
         self._surface = Surface((w, h))
@@ -237,8 +237,8 @@ class Image(UI):
     def w(self, value):
         self._w = value
         self.rect.w = value
-        self.image = transform.scale(image.convert(), (self.w, self.h))
-        self._OriginalImage = transform.scale(image.convert(), (self.w, self.h))
+        self.image = transform.scale(image, (self.w, self.h))
+        self._OriginalImage = transform.scale(image, (self.w, self.h))
     
     @property
     def h(self):
@@ -248,7 +248,7 @@ class Image(UI):
     def h(self, value):
         self._h = value
         self.rect.h = value
-        self.image = transform.scale(image.convert(), (self.w, self.h))
+        self.image = transform.scale(image, (self.w, self.h))
     
     @property
     def image(self):
@@ -256,7 +256,7 @@ class Image(UI):
 
     @image.setter
     def image(self, value):
-        self._image = transform.scale(value.convert_alpha(), (self.w, self.h))
+        self._image = transform.scale(value, (self.w, self.h))
     
     def setFlipped(self, x = False, y = False):
         rotated_OriginalImage = transform.rotate(self._OriginalImage, self.rotation)
