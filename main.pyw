@@ -140,9 +140,15 @@ def decodeFactoryComponent(factory: fac.Factory, id):
                 
                 # flip if needed
                 if (previousDirection, turnDir) in leftTurns:
-                    conveyor.setFlipped(y = True)
+                    if previousDirection is fac.Directions.East:
+                        if turnDir is fac.Directions.North:
+                            conveyor.setFlipped(x = True)
+                        else:
+                            conveyor.setFlipped(y = True)
+                    else:
+                        conveyor.setFlipped(x = True)
             else:
-                assert ValueError, "unknown transport type"
+                assert ValueError("unknown transport type")
             
             # find length and direction between significant points
             deltaX = turnPos[0] - previousPos[0]
@@ -251,7 +257,14 @@ def main():
     
     mainFactory.addTransportTurn(conveyor1, [(1, 0), fac.Directions.East])
     mainFactory.addTransportTurn(conveyor1, [(3, 0), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(3, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(3, 2), fac.Directions.West])
+    mainFactory.addTransportTurn(conveyor1, [(1, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(1, 3), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(5, 3), fac.Directions.North])
+    mainFactory.addTransportTurn(conveyor1, [(5, 2), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(8, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(8, 4), fac.Directions.West])
+    mainFactory.addTransportTurn(conveyor1, [(6, 4), fac.Directions.North])
     
     decodeFactoryComponent(mainFactory, conveyor1)
     
