@@ -300,13 +300,13 @@ class Factory():
             if producer.totalItems() < producer.maxItems:
                 producer.inventory[producer.material] = producer.inventory.get(producer.material, 0) + producer.efficiency
                 
+                print(f"{producer.material.name} made")
+                
                 totalItems = producer.totalItems()
                 
                 if totalItems > producer.maxItems:
                     itemsToRemove = totalItems - producer.maxItems
                     producer.inventory[producer.material] -= itemsToRemove
-            
-            print(f"{producer.material.name} made")
             
             producer.progress = 0
     

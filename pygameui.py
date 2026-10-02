@@ -41,7 +41,6 @@ class UI():
     
     def destroy(self):
         UI.instances.remove(self)
-        print("pls destroy")
     
     @property
     def x(self):
@@ -216,8 +215,6 @@ class Image(UI):
         
         self._surface = Surface((w, h))
         
-        Image.instances.append(self)
-    
     @property
     def rotation(self):
         return self._rotation
