@@ -185,7 +185,7 @@ def renderVisibleItems(factory: fac.Factory):
     for transport in [transp for transp in visibleTransports if transp.id in uniqueids]:
         # change reference of transport from the sprite to the actual transport in the factory
         transport = factory.transports[transport.id]
-        for i, item in enumerate(transport.items):
+        for i, item in enumerate(transport.items):            
             itemType = item[0]
             itemPos = item[1]
             itemid = transport.itemids[i]
@@ -204,7 +204,7 @@ def renderVisibleItems(factory: fac.Factory):
 
             segmentLength = abs(dx) + abs(dy)
 
-            distanceIntoSegment = itemPos - segmentStartDistance
+            distanceIntoSegment = (itemPos / 2) - segmentStartDistance
 
             t = distanceIntoSegment / segmentLength
             
@@ -220,6 +220,11 @@ def renderVisibleItems(factory: fac.Factory):
             else:
                 visibleItems[itemid].x = itemPosScreen[0]
                 visibleItems[itemid].y = itemPosScreen[1]
+    
+        # clean up visible items
+        while transport.lastDestroyedid in visibleItems:
+            visibleItems[transport.lastDestroyedid].destroy()
+            del visibleItems[transport.lastDestroyedid]
             
 def drawAll(window, dt):
     pygameui.UI.drawAll(window)
@@ -236,27 +241,17 @@ def main():
     mainFactory = fac.Factory()
     
     drill1 = mainFactory.addProducer(fac.drill)
-    drill2 = mainFactory.addProducer(fac.drill2)
     furnace = mainFactory.addMachine(fac.furnace)
-    box = mainFactory.addInventory(fac.box)
     
     conveyor1 = mainFactory.addTransport(fac.conveyor)
-    conveyor2 = mainFactory.addTransport(fac.conveyor)
-    conveyor3 = mainFactory.addTransport(fac.conveyor)
     
     mainFactory.updateProducer(drill1, outputids = [conveyor1])
-    mainFactory.updateProducer(drill2, outputids = [conveyor2])
     
-    mainFactory.updateMachine(furnace, inputids = [conveyor1, conveyor2], outputid = conveyor3, recipe = fac.steelRecipe)
-    
-    mainFactory.updateInventory(box, inputids = [conveyor3])
+    mainFactory.updateMachine(furnace, inputids = [conveyor1], outputid = None, recipe = fac.steelRecipe)
     
     mainFactory.addTransportTurn(conveyor1, [(1, 0), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(6, 0), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(6, 2), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(11, 2), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(11, 5), fac.Directions.West])
-    mainFactory.addTransportTurn(conveyor1, [(1, 5), fac.Directions.West])
+    mainFactory.addTransportTurn(conveyor1, [(3, 0), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(3, 2), fac.Directions.South])
     
     decodeFactoryComponent(mainFactory, conveyor1)
     

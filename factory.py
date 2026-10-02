@@ -60,6 +60,7 @@ class Transport():
     finalDirection: Directions = Directions.South
     items: list[list[Items | float]] = field(default_factory = list)
     itemids: list[int] = field(default_factory = list)
+    lastDestroyedid: int = 0
     id: int = 0
     # input: int | None   <- perhaps unnecessary?
     # output: int | None  <- 
@@ -223,7 +224,7 @@ class Factory():
             
             cumulativeLength += dx + dy
             
-        length = cumulativeLength * 2 + 2
+        length = cumulativeLength 
         
         return length if length > 2 else 2
 
@@ -243,7 +244,7 @@ class Factory():
             
             cumulativeLength += dx + dy
             
-            if cumulativeLength > itemPos: break
+            if cumulativeLength > itemPos / 2: break
             
         return (prevTurnPos, turnPos, cumulativeLength - dx - dy)
     
@@ -305,6 +306,8 @@ class Factory():
                     itemsToRemove = totalItems - producer.maxItems
                     producer.inventory[producer.material] -= itemsToRemove
             
+            print(f"{producer.material.name} made")
+            
             producer.progress = 0
     
     def _stepMachines(self, dt):
@@ -338,7 +341,7 @@ class Factory():
     def _stepTransports(self, dt):
         for id, transport in self.transports.items():
             # farthest length a moving item may go
-            farthest = transport.length
+            farthest = transport.length * 2
             
             for item in transport.items:
                 # move items
@@ -348,7 +351,7 @@ class Factory():
                     item[1] = farthest
                     
                 farthest = item[1] - 1
-    
+            
     def _stepConnections(self):
         """resolve in/outputs"""
         
@@ -374,6 +377,8 @@ class Factory():
                         # id item
                         transport.itemids.append(self.nextid)
                         self.nextid += 1
+                        
+                        print(f"{itemToTransfer.name} put on conveyor")
         
         # resolve machine i/o
         for id, machine in self.machines.items():
@@ -403,7 +408,7 @@ class Factory():
                         # check for item at end of transport
                         transport = self.transports[input]
                         if transport.items:
-                            if transport.items[0][1] < transport.length: continue
+                            if transport.items[0][1] / 2 < transport.length: continue
                         else: continue
                         
                         # check for space in the machine
@@ -416,9 +421,13 @@ class Factory():
                         if itemToTransport not in allowItems: continue
                         if machine.input_inventory.get(itemToTransport, 0) + 1 > allowItems[itemToTransport]: continue
                         
+                        transport.lastDestroyedid = transport.itemids[0] # flag to the renderer to destroy the visual rep
+                        
+                        print(f"{itemToTransport.name} took into furnace")
+                        
                         # remove last item from transport
-                        del transport.items[0]
-                        del transport.itemids[0]
+                        del transport.items[0] 
+                        del transport.itemids[0] 
                         
                         # add item into the machine
                         machine.input_inventory[itemToTransport] = machine.input_inventory.get(itemToTransport, 0) + 1
@@ -452,7 +461,7 @@ class Factory():
                         # check for item at end of transport
                         transport = self.transports[input]
                         if transport.items:
-                            if transport.items[0][1] < transport.length: continue
+                            if transport.items[0][1] / 2 < transport.length: continue
                         else: continue
                         
                         # check for space in the inventory
@@ -460,10 +469,12 @@ class Factory():
                         
                         itemToTransport = transport.items[0][0]
                         
-                        # remove last item from transport
-                        del transport.items[0]
-                        del transport.itemids[0]
+                        transport.lastDestroyedid = transport.itemids[0] # flag to the renderer to destroy the visual rep
                         
+                        # remove last item from transport
+                        del transport.items[0] 
+                        del transport.itemids[0] 
+                
                         # add item into the machine
                         inventory.inventory[itemToTransport] = inventory.inventory.get(itemToTransport, 0) + 1
                         
