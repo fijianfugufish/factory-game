@@ -59,6 +59,7 @@ class Transport():
     initialDirection: Directions = Directions.North
     finalDirection: Directions = Directions.South
     items: list[list[Items | float]] = field(default_factory = list)
+    itemids: list[int] = field(default_factory = list)
     id: int = 0
     # input: int | None   <- perhaps unnecessary?
     # output: int | None  <- 
@@ -214,7 +215,7 @@ class Factory():
         cumulativeLength = 0
         
         for i, turn in enumerate(transport.turns):
-            prevTurnPos = transport.turns[i - 1][0] if i > 0 else (0, 0)
+            prevTurnPos = transport.turns[i - 1][0] if i > 0 else transport.turns[i][0]
             turnPos = turn[0]
             
             dx = abs(turnPos[0] - prevTurnPos[0])
@@ -225,6 +226,26 @@ class Factory():
         length = cumulativeLength * 2 + 2
         
         return length if length > 2 else 2
+
+    def calculateKeyPointsItemIsBetween(self, transportid: int, itemPos: float) -> tuple[tuple[int, int], tuple[int, int], int]:
+        """returns the key points in world pos an item on a given transport would be between"""
+        
+        transport = self.transports[transportid]
+        
+        cumulativeLength = 0
+        
+        for i, turn in enumerate(transport.turns):
+            prevTurnPos = transport.turns[i - 1][0] if i > 0 else transport.turns[i][0]
+            turnPos = turn[0]
+            
+            dx = abs(turnPos[0] - prevTurnPos[0])
+            dy = abs(turnPos[1] - prevTurnPos[1])
+            
+            cumulativeLength += dx + dy
+            
+            if cumulativeLength > itemPos: break
+            
+        return (prevTurnPos, turnPos, cumulativeLength - dx - dy)
     
     def addTransportTurn(self, transportid: int, turn: list[tuple[int, int] | Directions]): 
         transport = self.transports[transportid]
@@ -284,8 +305,6 @@ class Factory():
                     itemsToRemove = totalItems - producer.maxItems
                     producer.inventory[producer.material] -= itemsToRemove
             
-            print(f"{producer.material.name} produced")
-            
             producer.progress = 0
     
     def _stepMachines(self, dt):
@@ -313,8 +332,6 @@ class Factory():
                 
                 # add result to output inventory
                 machine.output_inventory[result[0]] = machine.output_inventory.get(result[0], 0) + result[1]
-                
-                print(f"{result[0].name} made")
                 
                 machine.progress = 0
             
@@ -354,6 +371,9 @@ class Factory():
                         
                         # transfer to transport at position 0
                         transport.items.append([itemToTransfer, 0])
+                        # id item
+                        transport.itemids.append(self.nextid)
+                        self.nextid += 1
         
         # resolve machine i/o
         for id, machine in self.machines.items():
@@ -373,6 +393,9 @@ class Factory():
                     
                     # transfer to transport at position 0
                     transport.items.append([itemToTransfer, 0])
+                    # id item
+                    transport.itemids.append(self.nextid)
+                    self.nextid += 1
             
             if machine.input and machine.currentRecipe:
                 for input in machine.input:
@@ -395,6 +418,7 @@ class Factory():
                         
                         # remove last item from transport
                         del transport.items[0]
+                        del transport.itemids[0]
                         
                         # add item into the machine
                         machine.input_inventory[itemToTransport] = machine.input_inventory.get(itemToTransport, 0) + 1
@@ -418,6 +442,9 @@ class Factory():
                         
                         # transfer to transport at position 0
                         transport.items.append([itemToTransfer, 0])
+                        # id item
+                        transport.itemids.append(self.nextid)
+                        self.nextid += 1
             
             if inventory.input:
                 for input in inventory.input:
@@ -435,12 +462,11 @@ class Factory():
                         
                         # remove last item from transport
                         del transport.items[0]
+                        del transport.itemids[0]
                         
                         # add item into the machine
                         inventory.inventory[itemToTransport] = inventory.inventory.get(itemToTransport, 0) + 1
                         
-                        print(f"{itemToTransport.name} recieved")
-     
     def step(self, dt: float):
         """main factory update function"""
         
@@ -448,3 +474,6 @@ class Factory():
         self._stepMachines(dt)
         self._stepTransports(dt)
         self._stepConnections()
+        
+        # todo fix known edgecases
+        # conveyor cannot loop into itself

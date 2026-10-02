@@ -210,7 +210,7 @@ class Image(UI):
         
         self.hidden = False
         
-        self.image = transform.scale(image.convert_alpha(), (w, h))
+        self._image = transform.scale(image.convert_alpha(), (w, h))
         self._OriginalImage = self.image
         
         self._surface = Surface((w, h))
@@ -251,6 +251,14 @@ class Image(UI):
         self._h = value
         self.rect.h = value
         self.image = transform.scale(image.convert(), (self.w, self.h))
+    
+    @property
+    def image(self):
+        return self._image
+
+    @image.setter
+    def image(self, value):
+        self._image = transform.scale(value.convert_alpha(), (self.w, self.h))
     
     def setFlipped(self, x = False, y = False):
         self.image = transform.flip(self._OriginalImage, x, y)
