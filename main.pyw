@@ -139,6 +139,7 @@ def decodeFactoryComponent(factory: fac.Factory, id):
                     conveyor.rotation = previousDirection.value
                 
                 # flip if needed
+                # honestly trial and error to figure this out. dont touch.
                 if (previousDirection, turnDir) in leftTurns:
                     if previousDirection is fac.Directions.East:
                         if turnDir is fac.Directions.North:
@@ -197,6 +198,7 @@ def renderVisibleItems(factory: fac.Factory):
             itemid = transport.itemids[i]
             
             # itemPos is recorded in 'transport space', distance along the trasport
+            # 1 transport space unit is equivalent to 0.5 world space
             # lerp between key points to translate it to world space
             
             # find which two key points to lerp from
