@@ -151,7 +151,7 @@ class Button(UI):
     
     def destroy(self):
         UI.instances.remove(self)
-        Button.instances.remove(self)
+        Button.buttonInstances.remove(self)
     
     @classmethod
     def handleAllButtons(cls, mousePos, event):
