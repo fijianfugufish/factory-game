@@ -16,6 +16,8 @@ uniqueids: list[int] = []
 
 _DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
 
+_FurnaceFrames = [image.load(f"Images/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
+
 _ConveyorStraightFrames = [image.load(f"Images/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
 _ConveyorTurnFrames =     [image.load(f"Images/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
@@ -49,11 +51,12 @@ class ConveyorBelt(pygameui.AnimatableSprite):
         visibleTransports.append(self)
         if self.id not in uniqueids: uniqueids.append(self.id)
 
-class Furnace(pygameui.Sprite):
+class Furnace(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
-        #self.addAnimation("move", *ConveyorStraightFrames)
+        self.addAnimation("cook", *_FurnaceFrames)
+        self.startAnimation("cook", 10)
         self.id = id
         
         self.worldPos = worldPos
@@ -202,6 +205,21 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         # ensure producer is a known type
         if producer.type == "Drill":
             drill = Drill(screenPos[0], screenPos[1], id, pos)
+            drill.rotation = producer.rotation.value
+        else:
+            assert ValueError, "unknown producer type"
+    
+    # decode for machines
+    elif id in factory.machines:
+        machine = factory.machines[id]
+        pos = machine.position
+        
+        screenPos = worldToSreen(pos)
+        
+        # ensure machine is a known type
+        if machine.type == "Furnace":
+            furnace = Furnace(screenPos[0], screenPos[1], id, pos)
+            furnace.rotation = machine.rotation.value
         else:
             assert ValueError, "unknown producer type"
 

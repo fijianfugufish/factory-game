@@ -18,29 +18,46 @@ def main():
     mainFactory = fac.Factory()
     
     drill1 = mainFactory.addProducer(fac.drill)
-    mainFactory.updateProducer(drill1, position = (1, 0))
+    mainFactory.updateProducer(drill1, position = (1, 0), rotation = fac.Directions.West)
+    
+    drill2 = mainFactory.addProducer(fac.drill2)
+    mainFactory.updateProducer(drill2, position = (11, 1), rotation = fac.Directions.East)
     
     furnace = mainFactory.addMachine(fac.furnace)
+    mainFactory.updateMachine(furnace, position = (8, 5), rotation = fac.Directions.North)
     
     conveyor1 = mainFactory.addTransport(fac.conveyor)
+    conveyor2 = mainFactory.addTransport(fac.conveyor)
+    conveyor3 = mainFactory.addTransport(fac.conveyor)
     
     mainFactory.updateProducer(drill1, outputids = [conveyor1])
+    mainFactory.updateProducer(drill2, outputids = [conveyor2])
     
-    mainFactory.updateMachine(furnace, inputids = [conveyor1], outputid = None, recipe = fac.steelRecipe)
+    mainFactory.updateMachine(furnace, inputids = [conveyor1, conveyor2], outputid = conveyor3, recipe = fac.steelRecipe)
     
-    mainFactory.addTransportTurn(conveyor1, [(3, 0), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(5, 0), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(3, 1), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(5, 1), fac.Directions.South])
     mainFactory.addTransportTurn(conveyor1, [(5, 2), fac.Directions.West])
     mainFactory.addTransportTurn(conveyor1, [(2, 2), fac.Directions.South])
     mainFactory.addTransportTurn(conveyor1, [(2, 3), fac.Directions.East])
     mainFactory.addTransportTurn(conveyor1, [(7, 3), fac.Directions.North])
     mainFactory.addTransportTurn(conveyor1, [(7, 2), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(10, 2), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(10, 4), fac.Directions.West])
-    mainFactory.addTransportTurn(conveyor1, [(8, 4), fac.Directions.North])
+    mainFactory.addTransportTurn(conveyor1, [(8, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(8, 4), fac.Directions.South])
+    
+    mainFactory.addTransportTurn(conveyor2, [(10, 1), fac.Directions.West])
+    mainFactory.addTransportTurn(conveyor2, [(9, 1), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor2, [(9, 4), fac.Directions.South])
+    
+    mainFactory.addTransportTurn(conveyor3, [(8, 7), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor3, [(8, 9), fac.Directions.South])
     
     _decodeFactoryComponent(mainFactory, conveyor1)
+    _decodeFactoryComponent(mainFactory, conveyor2)
+    _decodeFactoryComponent(mainFactory, conveyor3)
     _decodeFactoryComponent(mainFactory, drill1)
+    _decodeFactoryComponent(mainFactory, drill2)
+    _decodeFactoryComponent(mainFactory, furnace)
     
     while gameRunning:
         # main game loop

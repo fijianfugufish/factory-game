@@ -2,7 +2,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 from copy import deepcopy
 
-MISSING = object()
+_MISSING = object()
 
 class Directions(Enum):
     North = 0
@@ -39,6 +39,7 @@ class Machine():
     maxItems: int
     size: tuple[int, int]                       # how many tiles the machine takes up, x by y from position
     position: tuple[int, int] = (0, 0)
+    rotation: Directions = Directions.North
     input_inventory: dict[Items, int] = field(default_factory = dict)
     output_inventory: dict[Items, int] = field(default_factory = dict)
     input: list[int] | None = None
@@ -70,6 +71,7 @@ class Inventory():
     type: str
     maxItems: int
     position: tuple[int, int] = (0, 0)
+    rotation: Directions = Directions.North
     inventory: dict[Items, int] = field(default_factory = dict)
     input: list[int] | None = None
     output: list[int] | None = None
@@ -86,6 +88,7 @@ class Producer():
     efficiency: int
     maxItems: int
     position: tuple[int, int] = (0, 0)
+    rotation: Directions = Directions.North
     inventory: dict[Items, int] = field(default_factory = dict)
     output: list[int] | None = None
     progress: float = 0
@@ -151,12 +154,14 @@ class Factory():
         return producer.id
     
     def updateProducer(self, producerid: int, *,
-                       outputids: list[int] = MISSING,
-                       position: tuple[int, int] = MISSING):
+                       outputids: list[int] = _MISSING,
+                       position: tuple[int, int] = _MISSING,
+                       rotation: Directions = _MISSING):
         producer = self.producers[producerid]
         
-        if outputids is not MISSING: producer.output = outputids
-        if position  is not MISSING: producer.position = position
+        if outputids is not _MISSING: producer.output = outputids
+        if position  is not _MISSING: producer.position = position
+        if rotation  is not _MISSING: producer.rotation = rotation
     
     def destroyProducer(self, producerid: int):
         del self.producers[producerid]
@@ -175,14 +180,16 @@ class Factory():
         self.machines[machineid].input_inventory.clear()
     
     def updateMachine(self, machineid: int, *, 
-                      inputids: list[int] = MISSING, outputid: int = MISSING, recipe: Recipe = MISSING,
-                      position: tuple[int, int] = MISSING):
+                      inputids: list[int] = _MISSING, outputid: int = _MISSING, recipe: Recipe = _MISSING,
+                      position: tuple[int, int] = _MISSING,
+                      rotation: Directions = _MISSING):
         machine = self.machines[machineid]
         
-        if inputids is not MISSING: machine.input = inputids
-        if outputid is not MISSING: machine.output = outputid
-        if position is not MISSING: machine.position = position
-        if recipe   is not MISSING: 
+        if inputids is not _MISSING: machine.input = inputids
+        if outputid is not _MISSING: machine.output = outputid
+        if position is not _MISSING: machine.position = position
+        if rotation is not _MISSING: machine.rotation = rotation
+        if recipe   is not _MISSING: 
             machine.currentRecipe = recipe
             self.clearMachineInv(machineid)
             machine.progress = 0
@@ -202,13 +209,13 @@ class Factory():
         return transport.id
     
     def updateTransport(self, transportid: int, *,
-                        #inputids: list[int] = MISSING, outputid: int = MISSING,
-                        length: int = MISSING):
+                        #inputids: list[int] = _MISSING, outputid: int = _MISSING,
+                        length: int = _MISSING):
         transport = self.transports[transportid]
         
-        # if inputids is not MISSING: transport.input = inputids
-        # if outputid is not MISSING: transport.output = outputid
-        if length   is not MISSING: transport.length = length
+        # if inputids is not _MISSING: transport.input = inputids
+        # if outputid is not _MISSING: transport.output = outputid
+        if length   is not _MISSING: transport.length = length
     
     def calculateTransportLength(self, transportid: int) -> int:
         transport = self.transports[transportid]
@@ -277,13 +284,15 @@ class Factory():
         return inventory.id
     
     def updateInventory(self, inventoryid: int, *,
-                        inputids: list[int] = MISSING, outputids: list[int] = MISSING,
-                        position: tuple[int, int] = MISSING):
+                        inputids: list[int] = _MISSING, outputids: list[int] = _MISSING,
+                        position: tuple[int, int] = _MISSING,
+                        rotation: Directions = _MISSING):
         inventory = self.inventories[inventoryid]
         
-        if inputids  is not MISSING: inventory.input = inputids
-        if outputids is not MISSING: inventory.output = outputids
-        if position  is not MISSING: inventory.position = position
+        if inputids  is not _MISSING: inventory.input = inputids
+        if outputids is not _MISSING: inventory.output = outputids
+        if position  is not _MISSING: inventory.position = position
+        if rotation  is not _MISSING: inventory.rotation = rotation
     
     def destroyInventory(self, inventoryid: int):
         del self.inventories[inventoryid]
@@ -330,12 +339,16 @@ class Factory():
                 ingredients = machine.currentRecipe.ingredients.items()
                 result = machine.currentRecipe.result
                 
+                print(f"{result[0].name} made")
+                
                 # remove ingredients from machine's inventory
                 for ingredient, amount in ingredients:
                     machine.input_inventory[ingredient] -= amount
                 
                 # add result to output inventory
                 machine.output_inventory[result[0]] = machine.output_inventory.get(result[0], 0) + result[1]
+                
+                print(f"{result[0].name} put on conveyor")
                 
                 machine.progress = 0
             
