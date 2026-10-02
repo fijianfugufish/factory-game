@@ -237,8 +237,8 @@ class Image(UI):
     def w(self, value):
         self._w = value
         self.rect.w = value
-        self.image = transform.scale(image, (self.w, self.h))
-        self._OriginalImage = transform.scale(image, (self.w, self.h))
+        self.image = transform.scale(self.image, (self.w, self.h))
+        self._OriginalImage = transform.scale(self._OriginalImage, (self.w, self.h))
     
     @property
     def h(self):
@@ -248,7 +248,7 @@ class Image(UI):
     def h(self, value):
         self._h = value
         self.rect.h = value
-        self.image = transform.scale(image, (self.w, self.h))
+        self.image = transform.scale(self.image, (self.w, self.h))
     
     @property
     def image(self):
