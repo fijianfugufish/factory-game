@@ -18,6 +18,8 @@ def main():
     mainFactory = fac.Factory()
     
     drill1 = mainFactory.addProducer(fac.drill)
+    mainFactory.updateProducer(drill1, position = (1, 0))
+    
     furnace = mainFactory.addMachine(fac.furnace)
     
     conveyor1 = mainFactory.addTransport(fac.conveyor)
@@ -26,18 +28,19 @@ def main():
     
     mainFactory.updateMachine(furnace, inputids = [conveyor1], outputid = None, recipe = fac.steelRecipe)
     
-    mainFactory.addTransportTurn(conveyor1, [(1, 0), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(3, 0), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(3, 2), fac.Directions.West])
-    mainFactory.addTransportTurn(conveyor1, [(1, 2), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(1, 3), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(5, 3), fac.Directions.North])
-    mainFactory.addTransportTurn(conveyor1, [(5, 2), fac.Directions.East])
-    mainFactory.addTransportTurn(conveyor1, [(8, 2), fac.Directions.South])
-    mainFactory.addTransportTurn(conveyor1, [(8, 4), fac.Directions.West])
-    mainFactory.addTransportTurn(conveyor1, [(6, 4), fac.Directions.North])
+    mainFactory.addTransportTurn(conveyor1, [(3, 0), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(5, 0), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(5, 2), fac.Directions.West])
+    mainFactory.addTransportTurn(conveyor1, [(2, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(2, 3), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(7, 3), fac.Directions.North])
+    mainFactory.addTransportTurn(conveyor1, [(7, 2), fac.Directions.East])
+    mainFactory.addTransportTurn(conveyor1, [(10, 2), fac.Directions.South])
+    mainFactory.addTransportTurn(conveyor1, [(10, 4), fac.Directions.West])
+    mainFactory.addTransportTurn(conveyor1, [(8, 4), fac.Directions.North])
     
     _decodeFactoryComponent(mainFactory, conveyor1)
+    _decodeFactoryComponent(mainFactory, drill1)
     
     while gameRunning:
         # main game loop

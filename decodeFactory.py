@@ -14,6 +14,8 @@ visibleTransports: list[fac.Transport] = []
 visibleItems: dict[int, "Item"] = {}
 uniqueids: list[int] = []
 
+_DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
+
 _ConveyorStraightFrames = [image.load(f"Images/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
 _ConveyorTurnFrames =     [image.load(f"Images/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
@@ -23,7 +25,8 @@ class Drill(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
-        #self.addAnimation("move", *ConveyorStraightFrames)
+        self.addAnimation("drill", *_DrillFrames)
+        self.startAnimation("drill", 8)
         self.id = id
         
         self.worldPos = worldPos
@@ -91,11 +94,16 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         
         transport = factory.transports[id]
         
-        previousPos = (0, 0)
-        previousDirection = fac.Directions.North
+        previousPos = None
+        previousDirection = None
         
         for i, turns in enumerate(transport.turns):
             length = 0
+            
+            if previousPos is None and previousDirection is None:
+                previousPos = turns[0]
+                previousDirection = turns[1]
+                
             turnPos = turns[0]
             turnDir = turns[1] if len(turns) > 1 else previousDirection
             
@@ -183,6 +191,19 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             
             previousDirection = turnDir
             previousPos = turnPos
+    
+    # decode for producers
+    elif id in factory.producers:
+        producer = factory.producers[id]
+        pos = producer.position
+        
+        screenPos = worldToSreen(pos)
+        
+        # ensure producer is a known type
+        if producer.type == "Drill":
+            drill = Drill(screenPos[0], screenPos[1], id, pos)
+        else:
+            assert ValueError, "unknown producer type"
 
 def _renderVisibleItems(factory: fac.Factory):
     global nextVisibleItemid

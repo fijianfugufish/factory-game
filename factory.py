@@ -252,6 +252,7 @@ class Factory():
         transport = self.transports[transportid]
         
         if not transport.turns:
+            print(turn[1])
             transport.initialDirection = turn[1]
         
         transport.finalDirection = turn[1]
