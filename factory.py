@@ -269,6 +269,9 @@ class Factory():
         length = self.calculateTransportLength(transportid)
         
         self.updateTransport(transportid, length = length)
+    
+    #todo add extend transport turn helper for end and start of conveyor
+    #todo add split conveyor helper
         
     def destroyTransport(self, transportid: int):
         del self.transports[transportid]
