@@ -14,7 +14,7 @@ class Items(Enum):
     Wood = 1
     IronOre = 2
     Coal = 3
-    Steel = 4
+    SteelIngot = 4
     # etc...
 
 @dataclass
@@ -28,7 +28,7 @@ steelRecipe = Recipe(
         Items.IronOre: 3,
         Items.Coal: 1
         },
-    result = [Items.Steel, 1],
+    result = [Items.SteelIngot, 1],
     time = 2,
 )
 
@@ -99,7 +99,7 @@ class Producer():
 
 conveyor = Transport(
     type = "ConveyorBelt",
-    speed = 3,
+    speed = 30,
     length = 10,
     # input = None,
     # output = None,
@@ -231,7 +231,7 @@ class Factory():
             
             cumulativeLength += dx + dy
             
-        length = cumulativeLength 
+        length = cumulativeLength + 1
         
         return length if length > 2 else 2
 
@@ -242,9 +242,9 @@ class Factory():
         
         cumulativeLength = 0
         
-        for i, turn in enumerate(transport.turns):
-            prevTurnPos = transport.turns[i - 1][0] if i > 0 else transport.turns[i][0]
-            turnPos = turn[0]
+        for i in range(1, len(transport.turns)):
+            prevTurnPos = transport.turns[i - 1][0] if i > 0 else transport.turns[i]
+            turnPos = transport.turns[i][0]
             
             dx = abs(turnPos[0] - prevTurnPos[0])
             dy = abs(turnPos[1] - prevTurnPos[1])

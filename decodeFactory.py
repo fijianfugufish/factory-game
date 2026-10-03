@@ -22,6 +22,9 @@ _ConveyorStraightFrames = [image.load(f"Images/Conveyorbelt/ConveyorStraight/Con
 _ConveyorTurnFrames =     [image.load(f"Images/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
 _CoalSprite = image.load(f"Images/Ore/Coal.png").convert_alpha()
+_IronOreSprite = image.load(f"Images/Ore/IronOre.png").convert_alpha()
+
+_SteelIngotSprite = image.load(f"Images/Ingot/SteelIngot.png").convert_alpha()
 
 class Drill(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, **kwargs):
@@ -30,6 +33,7 @@ class Drill(pygameui.AnimatableSprite):
         self.addAnimation("drill", *_DrillFrames)
         self.startAnimation("drill", 8)
         self.id = id
+        self.z = 1
         
         self.worldPos = worldPos
 
@@ -58,6 +62,7 @@ class Furnace(pygameui.AnimatableSprite):
         self.addAnimation("cook", *_FurnaceFrames)
         self.startAnimation("cook", 10)
         self.id = id
+        self.z = 1
         
         self.worldPos = worldPos
 
@@ -74,7 +79,13 @@ class Item(pygameui.Sprite):
     def __init__(self, x, y, item, **kwargs):
         super().__init__(x, y, w = 0.5 * 64, h = 0.5 * 64, **kwargs)
         
-        self.image = _CoalSprite
+        match item:
+            case fac.Items.Coal:
+                self.image = _CoalSprite
+            case fac.Items.IronOre:
+                self.image = _IronOreSprite
+            case fac.Items.SteelIngot:
+                self.image = _SteelIngotSprite
         
         self.item = item
 
@@ -233,7 +244,7 @@ def _renderVisibleItems(factory: fac.Factory):
         transport = factory.transports[transport.id]
         for i, item in enumerate(transport.items):            
             itemType = item[0]
-            itemPos = item[1]
+            itemPos = item[1] - 1
             itemid = transport.itemids[i]
             
             # itemPos is recorded in 'transport space', distance along the trasport
@@ -253,7 +264,7 @@ def _renderVisibleItems(factory: fac.Factory):
 
             distanceIntoSegment = (itemPos / 2) - segmentStartDistance
 
-            t = distanceIntoSegment / segmentLength
+            t = distanceIntoSegment / segmentLength if segmentLength > 0 else 0
             
             # get world pos from the lerp and offset it to center
             itemPosWorld = (lerp(startx, endx, t) + 0.25, lerp(starty, endy, t) + 0.25)

@@ -21,13 +21,14 @@ def lighten(color, intensity):
 class UI():
     instances = []
     
-    def __init__(self, x, y, w, h, style = defaultStyle, **kwargs):
+    def __init__(self, x, y, w, h, z = 0, style = defaultStyle, **kwargs):
         super().__init__(**kwargs)
         
         self._x = x
         self._y = y
         self._w = w
         self._h = h
+        self.z = z
         
         self.color = style["color"]
         self.outline = style["outline"]
@@ -86,14 +87,15 @@ class UI():
     
     @classmethod
     def drawAll(cls, window):
+        cls.instances.sort(key = lambda item: item.z)
         for i in cls.instances:
             i.draw(window)
 
 class Button(UI):
     buttonInstances = []
     
-    def __init__(self, x, y, w, h, action = lambda: ..., style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, action = lambda: ..., style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, style = style, **kwargs)
         
         self.action = action
         
@@ -160,8 +162,8 @@ class Button(UI):
     
         
 class Label(UI):
-    def __init__(self, x, y, w, h, text = "", style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, text = "", style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, style = style, **kwargs)
         
         self.font = font.SysFont(style["font"], style["fontSize"])
         self.text = text
@@ -178,7 +180,7 @@ class Label(UI):
         window.blit(self.font.render(self.text, False, self.textColor), (self.x + self.textPadx, self.y + self.textPady))
     
 class TextButton(Button, Label):
-    def __init__(self, x, y, w, h, text = "", action = lambda: ..., style = defaultStyle, **kwargs):
+    def __init__(self, x, y, w, h, z = 0, text = "", action = lambda: ..., style = defaultStyle, **kwargs):
         super().__init__(x, y, w, h, text = text, action = action, style = style, **kwargs)
         
         self._OriginalTextColor = style["textColor"]
@@ -199,8 +201,8 @@ class TextButton(Button, Label):
         self.textColor = self._OriginalTextColor
 
 class Image(UI):
-    def __init__(self, x, y, w, h, image = noTexture, style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, image = noTexture, style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, style = style, **kwargs)
         
         self.x = x
         self.y = y
@@ -268,8 +270,8 @@ class Image(UI):
         window.blit(self.image, (self.x, self.y))
     
 class ImageButton(Button, Image):
-    def __init__(self, x, y, w, h, image = noTexture, action = lambda: ..., style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, image = image, action = action, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, image = noTexture, action = lambda: ..., style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, image = image, action = action, style = style, **kwargs)
         
         self.lighteningAmount = (255 * self.lighteningAmount) - 255
         self.darkeningAmount *= 255
@@ -286,14 +288,14 @@ class ImageButton(Button, Image):
         self.image = self._OriginalImage
 
 class Sprite(Image):
-    def __init__(self, x, y, w, h, image = noTexture, style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, image = image, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, image = noTexture, style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, image = image, style = style, **kwargs)
 
 class AnimatableSprite(Sprite):
     animationInstances = []
     
-    def __init__(self, x, y, w, h, image = noTexture, style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, image = image, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, image = noTexture, style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, image = image, style = style, **kwargs)
         
         self.animations = {}
         self.currentAnimation = None
