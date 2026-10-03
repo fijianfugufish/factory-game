@@ -59,6 +59,7 @@ class ConveyorBelt(pygameui.AnimatableSprite):
             
         self.startAnimation("move", speed * 8)
         self.id = id
+        self.z = -1
         
         self.worldPos = worldPos
         self.significant = False
@@ -226,8 +227,9 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 
             # make sure transport is a known type and place significant transports
             position = worldToSreen(turnPos)
+            key = (transport.id, turnPos)
             
-            if not isOffscreen(position) and transport.id not in visibleTransportSprites:
+            if not isOffscreen(position) and key not in visibleTransportSprites:
                 if transport.type == "ConveyorBelt":
                     
                     # check if first or last transport should bend
@@ -274,9 +276,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                     pos = (previousPos[0], previousPos[1] + (j + 1) * yDirection)
 
                 screenPos = worldToSreen(pos)
+                key = (transport.id, pos)
                 
                 # make sure transport is a known type
-                if not isOffscreen(screenPos) and transport.id not in visibleTransportSprites:
+                if not isOffscreen(screenPos) and key not in visibleTransportSprites:
                     if transport.type == "ConveyorBelt":
                         conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos, speed = transport.speed)
                         conveyor.rotation = previousDirection.value
@@ -440,15 +443,15 @@ def decodeAndRender(factory: fac.Factory, moved = False, forceRender = False):
         _findAllOnscreen(factory)
             
         for producerid in visibleProducers:
-            if ("producer", producerid) not in componentSprites:
+            if producerid not in componentSprites:
                 _decodeFactoryComponent(factory, producerid)
             
         for machineid in visibleMachines:
-            if ("machine", machineid) not in componentSprites:
+            if machineid not in componentSprites:
                 _decodeFactoryComponent(factory, machineid)
         
         for inventoryid in visibleInventories:
-            if ("inventory", inventoryid) not in componentSprites:
+            if inventoryid not in componentSprites:
                 _decodeFactoryComponent(factory, inventoryid)
         
         lastCameraPos = copy(cameraPos)
