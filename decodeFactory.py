@@ -38,7 +38,7 @@ class Drill(pygameui.AnimatableSprite):
         self.worldPos = worldPos
 
 class ConveyorBelt(pygameui.AnimatableSprite):    
-    def __init__(self, x, y, id, worldPos, bent = False, **kwargs):
+    def __init__(self, x, y, id, worldPos, speed, bent = False, **kwargs):
         super().__init__(x, y, w = 1 * 64, h = 1 * 64, **kwargs)
         
         if bent:
@@ -46,7 +46,7 @@ class ConveyorBelt(pygameui.AnimatableSprite):
         else:
             self.addAnimation("move", *_ConveyorStraightFrames)
             
-        self.startAnimation("move", 12)
+        self.startAnimation("move", speed * 8)
         self.id = id
         
         self.worldPos = worldPos
@@ -72,6 +72,7 @@ class Box(pygameui.Sprite):
         
         #self.addAnimation("move", *ConveyorStraightFrames)
         self.id = id
+        self.z = 1
         
         self.worldPos = worldPos
 
@@ -93,7 +94,19 @@ def lerp(start, end, t):
     return start + (end - start) * t
 
 def worldToSreen(worldPos):
-    return (worldPos[0] * 64, worldPos[1] * 64) #todo use player location to convert properly to screen space
+    screenx = (worldPos[0] * 64) 
+    screeny = (worldPos[1] * 64) 
+    return (screenx, screeny) #todo use player location to convert properly to screen space
+
+def isOffscreen(pos):
+    tolerance = 100
+    
+    if pos[0] < 0 - tolerance or pos[0] > winx + tolerance:
+        return True
+    if pos[1] < 0 - tolerance or pos[1] > winy + tolerance:
+        return True
+    
+    return False
 
 def _decodeFactoryComponent(factory: fac.Factory, id: int):
     # component to decode is a transport type        
@@ -147,31 +160,32 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                     bent = transport.finalDirection is not previousDirection
                 
             # make sure transport is a known type and place significant transports
-            if transport.type == "ConveyorBelt":
-                position = worldToSreen(turnPos)
-                
-                #todo dont render if offcreen
-                
-                # check if first or last transport should bend
-                if bent is not None:
-                    conveyor = ConveyorBelt(position[0], position[1], id, turnPos, bent = bent)
-                    conveyor.rotation = previousDirection.value if bent else turnDir.value
-                else:
-                    conveyor = ConveyorBelt(position[0], position[1], id, turnPos, bent = True)
-                    conveyor.rotation = previousDirection.value
-                
-                # flip if needed
-                # honestly trial and error to figure this out. dont touch.
-                if (previousDirection, turnDir) in leftTurns:
-                    if previousDirection is fac.Directions.East:
-                        if turnDir is fac.Directions.North:
-                            conveyor.setFlipped(x = True)
-                        else:
-                            conveyor.setFlipped(y = True)
+            position = worldToSreen(turnPos)
+            
+            if not isOffscreen(position):
+                if transport.type == "ConveyorBelt":
+                    if isOffscreen(position): continue
+                    
+                    # check if first or last transport should bend
+                    if bent is not None:
+                        conveyor = ConveyorBelt(position[0], position[1], id, turnPos, speed = transport.speed, bent = bent)
+                        conveyor.rotation = previousDirection.value if bent else turnDir.value
                     else:
-                        conveyor.setFlipped(x = True)
-            else:
-                assert ValueError("unknown transport type")
+                        conveyor = ConveyorBelt(position[0], position[1], id, turnPos, speed = transport.speed, bent = True)
+                        conveyor.rotation = previousDirection.value
+                    
+                    # flip if needed
+                    # honestly trial and error to figure this out. dont touch.
+                    if (previousDirection, turnDir) in leftTurns:
+                        if previousDirection is fac.Directions.East:
+                            if turnDir is fac.Directions.North:
+                                conveyor.setFlipped(x = True)
+                            else:
+                                conveyor.setFlipped(y = True)
+                        else:
+                            conveyor.setFlipped(x = True)
+                else:
+                    assert ValueError("unknown transport type")
             
             # find length and direction between significant points
             deltaX = turnPos[0] - previousPos[0]
@@ -194,14 +208,13 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
 
                 screenPos = worldToSreen(pos)
                 
-                #todo dont render if offcreen
-                
                 # make sure transport is a known type
-                if transport.type == "ConveyorBelt":
-                    conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos)
-                    conveyor.rotation = previousDirection.value
-                else:
-                    assert ValueError, "unknown transport type"
+                if not isOffscreen(screenPos):
+                    if transport.type == "ConveyorBelt":
+                        conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos, speed = transport.speed)
+                        conveyor.rotation = previousDirection.value
+                    else:
+                        assert ValueError, "unknown transport type"
             
             previousDirection = turnDir
             previousPos = turnPos
@@ -214,11 +227,12 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         screenPos = worldToSreen(pos)
         
         # ensure producer is a known type
-        if producer.type == "Drill":
-            drill = Drill(screenPos[0], screenPos[1], id, pos)
-            drill.rotation = producer.rotation.value
-        else:
-            assert ValueError, "unknown producer type"
+        if not isOffscreen(screenPos):
+            if producer.type == "Drill":
+                drill = Drill(screenPos[0], screenPos[1], id, pos)
+                drill.rotation = producer.rotation.value
+            else:
+                assert ValueError, "unknown producer type"
     
     # decode for machines
     elif id in factory.machines:
@@ -228,11 +242,29 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         screenPos = worldToSreen(pos)
         
         # ensure machine is a known type
-        if machine.type == "Furnace":
-            furnace = Furnace(screenPos[0], screenPos[1], id, pos)
-            furnace.rotation = machine.rotation.value
-        else:
-            assert ValueError, "unknown producer type"
+        if not isOffscreen(screenPos):
+            if machine.type == "Furnace":
+                furnace = Furnace(screenPos[0], screenPos[1], id, pos)
+                furnace.rotation = machine.rotation.value
+            else:
+                assert ValueError, "unknown producer type"
+    
+    # decode for machines
+    elif id in factory.inventories:
+        inventory = factory.inventories[id]
+        pos = inventory.position
+        
+        screenPos = worldToSreen(pos)
+        
+        # ensure inventory is a known type
+        if not isOffscreen(screenPos):
+            if inventory.type == "Box":
+                box = Box(screenPos[0], screenPos[1], id, pos)
+                box.rotation = inventory.rotation.value
+            else:
+                assert ValueError, "unknown producer type"
+    
+    #todo change 'if x.type' it is messy and not exactly necessary
 
 def _renderVisibleItems(factory: fac.Factory):
     global nextVisibleItemid
@@ -270,7 +302,13 @@ def _renderVisibleItems(factory: fac.Factory):
             itemPosWorld = (lerp(startx, endx, t) + 0.25, lerp(starty, endy, t) + 0.25)
             itemPosScreen = worldToSreen(itemPosWorld)
             
-            #todo dont render if offcreen
+            #dont render or destroy if offcreen
+            if isOffscreen(itemPosScreen): 
+                if itemid in visibleItems:
+                    visibleItems[itemid].destroy()
+                    del visibleItems[itemid]
+                    
+                continue
             
             # instantiate visible items if it doesnt already exist visually
             if itemid not in visibleItems:

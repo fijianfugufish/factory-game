@@ -99,7 +99,7 @@ class Producer():
 
 conveyor = Transport(
     type = "ConveyorBelt",
-    speed = 30,
+    speed = 2,
     length = 10,
     # input = None,
     # output = None,
@@ -110,7 +110,7 @@ furnace = Machine(
     recipes = [steelRecipe],
     progress = 0,
     maxItems = 5,
-    size = [1, 1]
+    size = [2, 2]
 )
 
 drill = Producer(
@@ -491,6 +491,8 @@ class Factory():
                 
                         # add item into the machine
                         inventory.inventory[itemToTransport] = inventory.inventory.get(itemToTransport, 0) + 1
+                        
+                        print(f"{itemToTransport.name} stored")
                         
     def step(self, dt: float):
         """main factory update function"""

@@ -26,6 +26,9 @@ def main():
     furnace = mainFactory.addMachine(fac.furnace)
     mainFactory.updateMachine(furnace, position = (8, 5), rotation = fac.Directions.North)
     
+    box = mainFactory.addInventory(fac.box)
+    mainFactory.updateInventory(box, position = (8, 10))
+    
     conveyor1 = mainFactory.addTransport(fac.conveyor)
     conveyor2 = mainFactory.addTransport(fac.conveyor)
     conveyor3 = mainFactory.addTransport(fac.conveyor)
@@ -34,6 +37,8 @@ def main():
     mainFactory.updateProducer(drill2, outputids = [conveyor2])
     
     mainFactory.updateMachine(furnace, inputids = [conveyor1, conveyor2], outputid = conveyor3, recipe = fac.steelRecipe)
+    
+    mainFactory.updateInventory(box, inputids = [conveyor3])
     
     mainFactory.addTransportTurn(conveyor1, [(3, 1), fac.Directions.East])
     mainFactory.addTransportTurn(conveyor1, [(5, 1), fac.Directions.South])
@@ -58,6 +63,7 @@ def main():
     _decodeFactoryComponent(mainFactory, drill1)
     _decodeFactoryComponent(mainFactory, drill2)
     _decodeFactoryComponent(mainFactory, furnace)
+    _decodeFactoryComponent(mainFactory, box)
     
     while gameRunning:
         # main game loop
