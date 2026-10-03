@@ -299,7 +299,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             if producer.type == "Drill":
                 drill = Drill(screenPos[0], screenPos[1], id, pos)
                 drill.rotation = producer.rotation.value
-                _addComponentSprite("producer", id, drill)
+                _addComponentSprite(id, drill)
             else:
                 raise ValueError("unknown producer type")
     
@@ -315,7 +315,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             if machine.type == "Furnace":
                 furnace = Furnace(screenPos[0], screenPos[1], id, pos)
                 furnace.rotation = machine.rotation.value
-                _addComponentSprite("machine", id, furnace)
+                _addComponentSprite(id, furnace)
             else:
                 raise ValueError("unknown producer type")
     
@@ -331,7 +331,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             if inventory.type == "Box":
                 box = Box(screenPos[0], screenPos[1], id, pos)
                 box.rotation = inventory.rotation.value
-                _addComponentSprite("inventory", id, box)
+                _addComponentSprite(id, box)
             else:
                 raise ValueError("unknown producer type")
     
@@ -412,7 +412,7 @@ def _findAllOnscreen(factory: fac.Factory):
             visibleProducers.add(producer.id)
         elif offscreen and producer.id in visibleProducers:
             visibleProducers.remove(producer.id)
-            _destroyComponentSprites("producer", producer.id)
+            _destroyComponentSprites(producer.id)
     
     for machine in factory.machines.values():
         offscreen = isOffscreen(worldToSreen(machine.position))
@@ -420,7 +420,7 @@ def _findAllOnscreen(factory: fac.Factory):
             visibleMachines.add(machine.id)
         elif offscreen and machine.id in visibleMachines:
             visibleMachines.remove(machine.id)
-            _destroyComponentSprites("machine", machine.id)
+            _destroyComponentSprites(machine.id)
                 
     for inventory in factory.inventories.values():
         offscreen = isOffscreen(worldToSreen(inventory.position))
@@ -428,7 +428,7 @@ def _findAllOnscreen(factory: fac.Factory):
             visibleInventories.add(inventory.id)
         elif offscreen and inventory.id in visibleInventories:
             visibleInventories.remove(inventory.id)
-            _destroyComponentSprites("inventory", inventory.id)
+            _destroyComponentSprites(inventory.id)
     
 def decodeAndRender(factory: fac.Factory, moved = False, forceRender = False):
     """render all factory components onscreen"""
