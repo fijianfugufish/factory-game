@@ -397,7 +397,7 @@ def _renderVisibleItems(factory: fac.Factory):
             itemPosWorld = (lerp(startx, endx, t) + 0.25, lerp(starty, endy, t) + 0.25)
             itemPosScreen = worldToSreen(itemPosWorld)
             
-            #dont render or destroy if offcreen
+            # dont render and destroy if offcreen
             if isOffscreen(itemPosScreen): 
                 if itemid in visibleItems:
                     visibleItems[itemid].destroy()
