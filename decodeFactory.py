@@ -18,12 +18,14 @@ lastCameraPos = [0, 0]
 cameraPos = [0, 0] # measured in world pos
 renderDistance = 3
 
+# sets are perfect for unique records of ids. i shouldve thought of this earlier
 visibleTransports: set[int] = set()
 visibleMachines: set[int] = set()
 visibleProducers: set[int] = set()
 visibleInventories: set[int] = set()
 visibleItems: dict[int, "Item"] = {}
 visibleSprites: list[pygameui.Sprite] = []
+# the seemingly complex keys ensure that every tranport and id sprite pairs are able to be referenced uniquely
 componentSprites: dict[int, list[pygameui.Sprite]] = {}
 visibleTransportSprites: dict[tuple[int, tuple[int, int]], pygameui.Sprite] = {}
 
@@ -108,6 +110,9 @@ class Item(pygameui.Sprite):
         
         self.item = item
 
+#todo fix naive class types. this is exactly the trap i was trying to avoid when making the data-driven factory
+#todo making them general is much better
+
 def lerp(start, end, t):
     return start + (end - start) * t
 
@@ -117,7 +122,7 @@ def worldToSreen(worldPos):
     return (screenx, screeny)
 
 def isOffscreen(pos):
-    tolerance = -100 #(renderDistance + 2) * 64
+    tolerance = (renderDistance + 2) * 64
     
     if pos[0] < -tolerance or pos[0] > winx + tolerance:
         return True
@@ -265,6 +270,8 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 else:
                     raise ValueError("unknown transport type")
             
+            #todo the above should be generalised before it becomes if statement spam
+            
             # find length and direction between significant points
             deltaX = turnPos[0] - previousPos[0]
             deltaY = turnPos[1] - previousPos[1]
@@ -296,6 +303,8 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                         conveyor.frame = _transportFrameSync
                     else:
                         raise ValueError("unknown transport type")
+                
+                #todo the above should be generalised before it becomes if statement spam
             
             previousDirection = turnDir
             previousPos = turnPos
@@ -315,6 +324,8 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 _addComponentSprite(id, drill)
             else:
                 raise ValueError("unknown producer type")
+        
+        #todo the above should be generalised before it becomes if statement spam
     
     # decode for machines
     elif id in factory.machines:
@@ -331,6 +342,8 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 _addComponentSprite(id, furnace)
             else:
                 raise ValueError("unknown producer type")
+        
+        #todo the above should be generalised before it becomes if statement spam
     
     # decode for machines
     elif id in factory.inventories:
@@ -347,9 +360,9 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 _addComponentSprite(id, box)
             else:
                 raise ValueError("unknown producer type")
+        
+        #todo the above should be generalised before it becomes if statement spam
     
-    #todo change 'if x.type' it is messy and not exactly necessary
-
 def _renderVisibleItems(factory: fac.Factory):
     global nextVisibleItemid
     
