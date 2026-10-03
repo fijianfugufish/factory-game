@@ -22,8 +22,8 @@ visibleProducers: set[int] = set()
 visibleInventories: set[int] = set()
 visibleItems: dict[int, "Item"] = {}
 visibleSprites: list[pygameui.Sprite] = []
-componentSprites: dict[tuple[str, int], list[pygameui.Sprite]] = {}
-visibleTransportSprites: dict[tuple[int, tuple], pygameui.Sprite] = {}
+componentSprites: dict[int, list[pygameui.Sprite]] = {}
+visibleTransportSprites: dict[tuple[int, tuple[int, int]], pygameui.Sprite] = {}
 
 _DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
 
@@ -132,30 +132,26 @@ def moveCameraLeft(amount):
 def moveCameraRight(amount):
     cameraPos[0] += amount
 
-def _addComponentSprite(kind, id, sprite):
+def _addComponentSprite(id, sprite):
     visibleSprites.append(sprite)
 
-    key = (kind, id)
+    if id not in componentSprites:
+        componentSprites[id] = []
 
-    if key not in componentSprites:
-        componentSprites[key] = []
-
-    componentSprites[key].append(sprite)
+    componentSprites[id].append(sprite)
 
 
-def _destroyComponentSprites(kind, id):
-    key = (kind, id)
-
-    if key not in componentSprites:
+def _destroyComponentSprites(id):
+    if id not in componentSprites:
         return
 
-    for sprite in componentSprites[key]:
+    for sprite in componentSprites[id]:
         sprite.destroy()
 
         if sprite in visibleSprites:
             visibleSprites.remove(sprite)
 
-    del componentSprites[key]
+    del componentSprites[id]
 
 def _addTransportSprite(transport, worldPos, sprite):
     key = (transport.id, worldPos)
@@ -230,9 +226,8 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 
             # make sure transport is a known type and place significant transports
             position = worldToSreen(turnPos)
-            key = (transport.id, turnPos)
             
-            if not isOffscreen(position) and key not in visibleTransportSprites:
+            if not isOffscreen(position) and transport.id not in visibleTransportSprites:
                 if transport.type == "ConveyorBelt":
                     
                     # check if first or last transport should bend
@@ -279,10 +274,9 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                     pos = (previousPos[0], previousPos[1] + (j + 1) * yDirection)
 
                 screenPos = worldToSreen(pos)
-                key = (transport.id, pos)
                 
                 # make sure transport is a known type
-                if not isOffscreen(screenPos) and key not in visibleTransportSprites:
+                if not isOffscreen(screenPos) and transport.id not in visibleTransportSprites:
                     if transport.type == "ConveyorBelt":
                         conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos, speed = transport.speed)
                         conveyor.rotation = previousDirection.value
