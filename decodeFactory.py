@@ -41,6 +41,8 @@ class Drill(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
+        self.image = _DrillFrames[0]
+        
         self.addAnimation("drill", *_DrillFrames)
         self.startAnimation("drill", 8)
         self.id = id
@@ -53,8 +55,10 @@ class ConveyorBelt(pygameui.AnimatableSprite):
         super().__init__(x, y, w = 1 * 64, h = 1 * 64, **kwargs)
         
         if bent:
+            self.image = _ConveyorTurnFrames[0]
             self.addAnimation("move", *_ConveyorTurnFrames)
         else:
+            self.image = _ConveyorStraightFrames[0]
             self.addAnimation("move", *_ConveyorStraightFrames)
             
         self.startAnimation("move", speed * 8)
@@ -68,6 +72,7 @@ class Furnace(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
+        self.image = _FurnaceFrames[0]
         self.addAnimation("cook", *_FurnaceFrames)
         self.startAnimation("cook", 10)
         self.id = id
@@ -108,7 +113,7 @@ def worldToSreen(worldPos):
     return (screenx, screeny)
 
 def isOffscreen(pos):
-    tolerance = renderDistance * 64
+    tolerance = (renderDistance + 2) * 64
     
     if pos[0] < -tolerance or pos[0] > winx + tolerance:
         return True
@@ -345,9 +350,7 @@ def _renderVisibleItems(factory: fac.Factory):
     
     # render items on conveyorbelts, ensuring only transports whose id is unique has their items rendered
     # this avoids unnecessary multi-rendering
-    for transportid in visibleTransports:
-        transport = factory.transports[transportid]
-        
+    for transport in factory.transports.values():
         for i, item in enumerate(transport.items):            
             itemType = item[0]
             itemPos = item[1] - 1
@@ -457,7 +460,7 @@ def decodeAndRender(factory: fac.Factory, moved = False, forceRender = False):
         lastCameraPos = copy(cameraPos)
     
     # check if camera moved, move everything
-    if moved:
+    if moved or forceRender:
         _unloadOffscreenTransportSprites()
         
         for transport in factory.transports.values():
