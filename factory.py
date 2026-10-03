@@ -310,7 +310,7 @@ class Factory():
             if producer.totalItems() < producer.maxItems:
                 producer.inventory[producer.material] = producer.inventory.get(producer.material, 0) + producer.efficiency
                 
-                print(f"{producer.material.name} made")
+                #print(f"{producer.material.name} made")
                 
                 totalItems = producer.totalItems()
                 
@@ -339,7 +339,7 @@ class Factory():
                 ingredients = machine.currentRecipe.ingredients.items()
                 result = machine.currentRecipe.result
                 
-                print(f"{result[0].name} made")
+                #print(f"{result[0].name} made")
                 
                 # remove ingredients from machine's inventory
                 for ingredient, amount in ingredients:
@@ -348,7 +348,7 @@ class Factory():
                 # add result to output inventory
                 machine.output_inventory[result[0]] = machine.output_inventory.get(result[0], 0) + result[1]
                 
-                print(f"{result[0].name} put on conveyor")
+                #print(f"{result[0].name} put on conveyor")
                 
                 machine.progress = 0
             
@@ -392,7 +392,7 @@ class Factory():
                         transport.itemids.append(self.nextid)
                         self.nextid += 1
                         
-                        print(f"{itemToTransfer.name} put on conveyor")
+                        #print(f"{itemToTransfer.name} put on conveyor")
         
         # resolve machine i/o
         for id, machine in self.machines.items():
@@ -437,7 +437,7 @@ class Factory():
                         
                         transport.lastDestroyedid = transport.itemids[0] # flag to the renderer to destroy the visual rep
                         
-                        print(f"{itemToTransport.name} took into furnace")
+                        #print(f"{itemToTransport.name} took into furnace")
                         
                         # remove last item from transport
                         del transport.items[0] 
@@ -492,7 +492,7 @@ class Factory():
                         # add item into the machine
                         inventory.inventory[itemToTransport] = inventory.inventory.get(itemToTransport, 0) + 1
                         
-                        print(f"{itemToTransport.name} stored")
+                        #print(f"{itemToTransport.name} stored")
                         
     def step(self, dt: float):
         """main factory update function"""
@@ -504,3 +504,4 @@ class Factory():
         
         # todo fix known edgecases
         # conveyor cannot loop into itself
+        # large step in dt could overrun producer / furnace timers and stop it from being produced

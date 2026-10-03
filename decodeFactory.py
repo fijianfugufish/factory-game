@@ -12,6 +12,8 @@ display.set_caption("factory game")
 # must import after display initialisation due to pygames convert() requiring it
 import pygameui
 
+_transportFrameSync = 0
+
 lastCameraPos = [0, 0]
 cameraPos = [0, 0] # measured in world pos
 renderDistance = 3
@@ -51,8 +53,8 @@ class Drill(pygameui.AnimatableSprite):
         self.worldPos = worldPos
 
 class ConveyorBelt(pygameui.AnimatableSprite):    
-    def __init__(self, x, y, id, worldPos, speed, bent = False, **kwargs):
-        super().__init__(x, y, w = 1 * 64, h = 1 * 64, **kwargs)
+    def __init__(self, x, y, id, worldPos, speed = 8, bent = False, **kwargs):
+        super().__init__(x, y, w = 1 * 64, h = 1 * 64, autoAnimate = False, **kwargs)
         
         if bent:
             self.image = _ConveyorTurnFrames[0]
@@ -61,7 +63,9 @@ class ConveyorBelt(pygameui.AnimatableSprite):
             self.image = _ConveyorStraightFrames[0]
             self.addAnimation("move", *_ConveyorStraightFrames)
             
-        self.startAnimation("move", speed * 8)
+        self.currentAnimation = "move"
+            
+        self.speed = speed
         self.id = id
         self.z = -1
         
@@ -113,7 +117,7 @@ def worldToSreen(worldPos):
     return (screenx, screeny)
 
 def isOffscreen(pos):
-    tolerance = (renderDistance + 2) * 64
+    tolerance = -100 #(renderDistance + 2) * 64
     
     if pos[0] < -tolerance or pos[0] > winx + tolerance:
         return True
@@ -136,7 +140,7 @@ def moveCameraLeft(amount):
     cameraPos[0] -= amount
 
 def moveCameraRight(amount):
-    cameraPos[0] += amount
+    cameraPos[0] += amount    
 
 def _addComponentSprite(id, sprite):
     visibleSprites.append(sprite)
@@ -145,7 +149,6 @@ def _addComponentSprite(id, sprite):
         componentSprites[id] = []
 
     componentSprites[id].append(sprite)
-
 
 def _destroyComponentSprites(id):
     if id not in componentSprites:
@@ -258,6 +261,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                     
                     # add to visible sprite list
                     _addTransportSprite(transport, turnPos, conveyor)
+                    conveyor.frame = _transportFrameSync
                 else:
                     raise ValueError("unknown transport type")
             
@@ -289,6 +293,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                         conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos, speed = transport.speed)
                         conveyor.rotation = previousDirection.value
                         _addTransportSprite(transport, pos, conveyor)
+                        conveyor.frame = _transportFrameSync
                     else:
                         raise ValueError("unknown transport type")
             
@@ -436,9 +441,9 @@ def _findAllOnscreen(factory: fac.Factory):
             visibleInventories.remove(inventory.id)
             _destroyComponentSprites(inventory.id)
     
-def decodeAndRender(factory: fac.Factory, moved = False, forceRender = False):
+def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = False):
     """render all factory components onscreen"""
-    global cameraPos, lastCameraPos, renderDistance
+    global cameraPos, lastCameraPos, renderDistance, _transportFrameSync
     
     render = dist(cameraPos, lastCameraPos) >= renderDistance
     
@@ -470,3 +475,11 @@ def decodeAndRender(factory: fac.Factory, moved = False, forceRender = False):
             component.x, component.y = worldToSreen(component.worldPos)
     
     _renderVisibleItems(factory)
+    
+    # animate transports based on one time to keep them synced 
+    _transportFrameSync += dt
+    for transport in visibleTransportSprites.values():
+        frames = transport.animations[transport.currentAnimation]
+        fps = transport.speed * 8
+        frame = int(_transportFrameSync * fps) % len(frames)
+        transport.image = transport.animations[transport.currentAnimation][frame]

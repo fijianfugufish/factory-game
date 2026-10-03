@@ -294,7 +294,7 @@ class Sprite(Image):
 class AnimatableSprite(Sprite):
     animationInstances = []
     
-    def __init__(self, x, y, w, h, z = 0, image = noTexture, style = defaultStyle, **kwargs):
+    def __init__(self, x, y, w, h, z = 0, autoAnimate = True, image = noTexture, style = defaultStyle, **kwargs):
         super().__init__(x, y, w, h, z, image = image, style = style, **kwargs)
         
         self.animations = {}
@@ -306,7 +306,9 @@ class AnimatableSprite(Sprite):
         
         self._originalAnimations = {}
         
-        self.animationInstances.append(self)
+        self.autoAnimate = autoAnimate
+        
+        if autoAnimate: self.animationInstances.append(self)
     
     def addAnimation(self, name, *args):
         """put frames of animation in args after name"""
@@ -343,7 +345,7 @@ class AnimatableSprite(Sprite):
     
     def destroy(self):
         UI.instances.remove(self)
-        AnimatableSprite.animationInstances.remove(self)
+        if self.autoAnimate: AnimatableSprite.animationInstances.remove(self)
     
     @property
     def rotation(self):
