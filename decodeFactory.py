@@ -1,5 +1,7 @@
 from pygame import *
 import factory as fac
+from copy import copy
+from math import dist
 
 winx = 1100
 winy = 750
@@ -10,9 +12,18 @@ display.set_caption("factory game")
 # must import after display initialisation due to pygames convert() requiring it
 import pygameui
 
-visibleTransports: list[fac.Transport] = []
+lastCameraPos = [0, 0]
+cameraPos = [0, 0] # measured in world pos
+renderDistance = 3
+
+visibleTransports: set[int] = set()
+visibleMachines: set[int] = set()
+visibleProducers: set[int] = set()
+visibleInventories: set[int] = set()
 visibleItems: dict[int, "Item"] = {}
-uniqueids: list[int] = []
+visibleSprites: list[pygameui.Sprite] = []
+componentSprites: dict[tuple[str, int], list[pygameui.Sprite]] = {}
+visibleTransportSprites: dict[tuple[int, tuple], pygameui.Sprite] = {}
 
 _DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
 
@@ -52,9 +63,6 @@ class ConveyorBelt(pygameui.AnimatableSprite):
         self.worldPos = worldPos
         self.significant = False
         
-        visibleTransports.append(self)
-        if self.id not in uniqueids: uniqueids.append(self.id)
-
 class Furnace(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
@@ -94,19 +102,80 @@ def lerp(start, end, t):
     return start + (end - start) * t
 
 def worldToSreen(worldPos):
-    screenx = (worldPos[0] * 64) 
-    screeny = (worldPos[1] * 64) 
-    return (screenx, screeny) #todo use player location to convert properly to screen space
+    screenx = (worldPos[0] - cameraPos[0]) * 64
+    screeny = (worldPos[1] - cameraPos[1]) * 64
+    return (screenx, screeny)
 
 def isOffscreen(pos):
-    tolerance = 100
+    tolerance = renderDistance * 64
     
-    if pos[0] < 0 - tolerance or pos[0] > winx + tolerance:
+    if pos[0] < -tolerance or pos[0] > winx + tolerance:
         return True
-    if pos[1] < 0 - tolerance or pos[1] > winy + tolerance:
+    if pos[1] < -tolerance or pos[1] > winy + tolerance:
         return True
     
     return False
+
+def positionCamera(pos):
+    global cameraPos
+    cameraPos = pos
+
+def moveCameraUp(amount):
+    cameraPos[1] -= amount
+
+def moveCameraDown(amount):
+    cameraPos[1] += amount
+
+def moveCameraLeft(amount):
+    cameraPos[0] -= amount
+
+def moveCameraRight(amount):
+    cameraPos[0] += amount
+
+def _addComponentSprite(kind, id, sprite):
+    visibleSprites.append(sprite)
+
+    key = (kind, id)
+
+    if key not in componentSprites:
+        componentSprites[key] = []
+
+    componentSprites[key].append(sprite)
+
+
+def _destroyComponentSprites(kind, id):
+    key = (kind, id)
+
+    if key not in componentSprites:
+        return
+
+    for sprite in componentSprites[key]:
+        sprite.destroy()
+
+        if sprite in visibleSprites:
+            visibleSprites.remove(sprite)
+
+    del componentSprites[key]
+
+def _addTransportSprite(transport, worldPos, sprite):
+    key = (transport.id, worldPos)
+
+    if key in visibleTransportSprites:
+        return
+
+    visibleTransportSprites[key] = sprite
+    visibleSprites.append(sprite)
+
+def _unloadOffscreenTransportSprites():
+    for key, sprite in list(visibleTransportSprites.items()):
+
+        if isOffscreen(worldToSreen(sprite.worldPos)):
+            sprite.destroy()
+
+            if sprite in visibleSprites:
+                visibleSprites.remove(sprite)
+
+            del visibleTransportSprites[key]
 
 def _decodeFactoryComponent(factory: fac.Factory, id: int):
     # component to decode is a transport type        
@@ -161,10 +230,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 
             # make sure transport is a known type and place significant transports
             position = worldToSreen(turnPos)
+            key = (transport.id, turnPos)
             
-            if not isOffscreen(position):
+            if not isOffscreen(position) and key not in visibleTransportSprites:
                 if transport.type == "ConveyorBelt":
-                    if isOffscreen(position): continue
                     
                     # check if first or last transport should bend
                     if bent is not None:
@@ -184,8 +253,11 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                                 conveyor.setFlipped(y = True)
                         else:
                             conveyor.setFlipped(x = True)
+                    
+                    # add to visible sprite list
+                    _addTransportSprite(transport, turnPos, conveyor)
                 else:
-                    assert ValueError("unknown transport type")
+                    raise ValueError("unknown transport type")
             
             # find length and direction between significant points
             deltaX = turnPos[0] - previousPos[0]
@@ -207,14 +279,16 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                     pos = (previousPos[0], previousPos[1] + (j + 1) * yDirection)
 
                 screenPos = worldToSreen(pos)
+                key = (transport.id, pos)
                 
                 # make sure transport is a known type
-                if not isOffscreen(screenPos):
+                if not isOffscreen(screenPos) and key not in visibleTransportSprites:
                     if transport.type == "ConveyorBelt":
                         conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos, speed = transport.speed)
                         conveyor.rotation = previousDirection.value
+                        _addTransportSprite(transport, pos, conveyor)
                     else:
-                        assert ValueError, "unknown transport type"
+                        raise ValueError("unknown transport type")
             
             previousDirection = turnDir
             previousPos = turnPos
@@ -231,8 +305,9 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             if producer.type == "Drill":
                 drill = Drill(screenPos[0], screenPos[1], id, pos)
                 drill.rotation = producer.rotation.value
+                _addComponentSprite("producer", id, drill)
             else:
-                assert ValueError, "unknown producer type"
+                raise ValueError("unknown producer type")
     
     # decode for machines
     elif id in factory.machines:
@@ -246,8 +321,9 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             if machine.type == "Furnace":
                 furnace = Furnace(screenPos[0], screenPos[1], id, pos)
                 furnace.rotation = machine.rotation.value
+                _addComponentSprite("machine", id, furnace)
             else:
-                assert ValueError, "unknown producer type"
+                raise ValueError("unknown producer type")
     
     # decode for machines
     elif id in factory.inventories:
@@ -261,8 +337,9 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             if inventory.type == "Box":
                 box = Box(screenPos[0], screenPos[1], id, pos)
                 box.rotation = inventory.rotation.value
+                _addComponentSprite("inventory", id, box)
             else:
-                assert ValueError, "unknown producer type"
+                raise ValueError("unknown producer type")
     
     #todo change 'if x.type' it is messy and not exactly necessary
 
@@ -271,9 +348,9 @@ def _renderVisibleItems(factory: fac.Factory):
     
     # render items on conveyorbelts, ensuring only transports whose id is unique has their items rendered
     # this avoids unnecessary multi-rendering
-    for transport in [transp for transp in visibleTransports if transp.id in uniqueids]:
-        # change reference of transport from the sprite to the actual transport in the factory
-        transport = factory.transports[transport.id]
+    for transportid in visibleTransports:
+        transport = factory.transports[transportid]
+        
         for i, item in enumerate(transport.items):            
             itemType = item[0]
             itemPos = item[1] - 1
@@ -321,7 +398,75 @@ def _renderVisibleItems(factory: fac.Factory):
         while transport.lastDestroyedid in visibleItems:
             visibleItems[transport.lastDestroyedid].destroy()
             del visibleItems[transport.lastDestroyedid]
-           
-def decodeAndRender(factory: fac.Factory):
-    #todo add decode all onscreen
+
+def _findAllOnscreen(factory: fac.Factory):
+    for transport in factory.transports.values():
+        for turn in transport.turns:
+            position = turn[0]
+            offscreen = isOffscreen(worldToSreen(position))
+            
+            # append to list of visible transports if any significant point is onscreen
+            if not offscreen and transport.id not in visibleTransports:
+                visibleTransports.add(transport.id)
+                break # ensure copies wont fill up the list
+            elif offscreen and transport.id in visibleTransports:
+                visibleTransports.remove(transport.id)
+    
+    for producer in factory.producers.values():
+        offscreen = isOffscreen(worldToSreen(producer.position))
+        if not isOffscreen(worldToSreen(producer.position)) and producer.id not in visibleProducers:
+            visibleProducers.add(producer.id)
+        elif offscreen and producer.id in visibleProducers:
+            visibleProducers.remove(producer.id)
+            _destroyComponentSprites("producer", producer.id)
+    
+    for machine in factory.machines.values():
+        offscreen = isOffscreen(worldToSreen(machine.position))
+        if not isOffscreen(worldToSreen(machine.position)) and machine.id not in visibleMachines:
+            visibleMachines.add(machine.id)
+        elif offscreen and machine.id in visibleMachines:
+            visibleMachines.remove(machine.id)
+            _destroyComponentSprites("machine", machine.id)
+                
+    for inventory in factory.inventories.values():
+        offscreen = isOffscreen(worldToSreen(inventory.position))
+        if not offscreen and inventory.id not in visibleInventories:
+            visibleInventories.add(inventory.id)
+        elif offscreen and inventory.id in visibleInventories:
+            visibleInventories.remove(inventory.id)
+            _destroyComponentSprites("inventory", inventory.id)
+    
+def decodeAndRender(factory: fac.Factory, moved = False, forceRender = False):
+    """render all factory components onscreen"""
+    global cameraPos, lastCameraPos, renderDistance
+    
+    render = dist(cameraPos, lastCameraPos) >= renderDistance
+    
+    if render or forceRender:
+        _findAllOnscreen(factory)
+            
+        for producerid in visibleProducers:
+            if ("producer", producerid) not in componentSprites:
+                _decodeFactoryComponent(factory, producerid)
+            
+        for machineid in visibleMachines:
+            if ("machine", machineid) not in componentSprites:
+                _decodeFactoryComponent(factory, machineid)
+        
+        for inventoryid in visibleInventories:
+            if ("inventory", inventoryid) not in componentSprites:
+                _decodeFactoryComponent(factory, inventoryid)
+        
+        lastCameraPos = copy(cameraPos)
+    
+    # check if camera moved, move everything
+    if moved:
+        _unloadOffscreenTransportSprites()
+        
+        for transport in factory.transports.values():
+            _decodeFactoryComponent(factory, transport.id)
+        
+        for component in visibleSprites:
+            component.x, component.y = worldToSreen(component.worldPos)
+    
     _renderVisibleItems(factory)

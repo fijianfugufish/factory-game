@@ -1,6 +1,6 @@
 from pygame import *
 import factory as fac
-from decodeFactory import window, decodeAndRender, _decodeFactoryComponent
+from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight
 import pygameui
  
 def drawAll(window, dt):
@@ -57,13 +57,7 @@ def main():
     mainFactory.addTransportTurn(conveyor3, [(8, 7), fac.Directions.South])
     mainFactory.addTransportTurn(conveyor3, [(8, 9), fac.Directions.South])
     
-    _decodeFactoryComponent(mainFactory, conveyor1)
-    _decodeFactoryComponent(mainFactory, conveyor2)
-    _decodeFactoryComponent(mainFactory, conveyor3)
-    _decodeFactoryComponent(mainFactory, drill1)
-    _decodeFactoryComponent(mainFactory, drill2)
-    _decodeFactoryComponent(mainFactory, furnace)
-    _decodeFactoryComponent(mainFactory, box)
+    decodeAndRender(mainFactory, forceRender = True)
     
     while gameRunning:
         # main game loop
@@ -79,9 +73,26 @@ def main():
             
             pygameui.Button.handleAllButtons(mouse.get_pos(), e.type)
         
+        keys = key.get_pressed()
+        
+        moved = False
+        
+        if keys[K_w]:
+            moveCameraUp(3 * dt)
+            moved = True
+        if keys[K_s]:
+            moveCameraDown(3 * dt)
+            moved = True
+        if keys[K_a]:
+            moveCameraLeft(3 * dt)
+            moved = True
+        if keys[K_d]:
+            moveCameraRight(3 * dt)
+            moved = True
+        
         mainFactory.step(dt)
         
-        decodeAndRender(mainFactory)
+        decodeAndRender(mainFactory, moved = moved)
         
         drawAll(window, dt)
         
