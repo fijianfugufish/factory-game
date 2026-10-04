@@ -64,7 +64,7 @@ class Transport(pygameui.AnimatableSprite):
         super().__init__(x, y, w = 1 * 64, h = 1 * 64, autoAnimate = False, **kwargs)
         
         match type:
-            case "Conveyor":
+            case "StandardConveyorBelt":
                 if bent:
                     self.image = _ConveyorTurnFrames[0]
                     self.addAnimation("move", *_ConveyorTurnFrames)
@@ -74,8 +74,8 @@ class Transport(pygameui.AnimatableSprite):
                     
                 self.currentAnimation = "move"
             case _:
-                raise ValueError("unknown transport type")
-            
+                raise ValueError(f"unknown transport type {type!r}")
+        
         self.speed = speed
         self.id = id
         self.z = -1
@@ -93,7 +93,7 @@ class Machine(pygameui.AnimatableSprite):
                 self.addAnimation("cook", *_FurnaceFrames)
                 self.startAnimation("cook", 10)
             case _:
-                raise ValueError("unknown machine type")
+                raise ValueError(f"unknown machine type {type!r}")
             
         self.id = id
         self.z = 1
@@ -108,7 +108,7 @@ class Inventory(pygameui.Sprite):
             case "Box":
                 ... # no assets yet
             case _:
-                raise ValueError("unknown inventory type")
+                raise ValueError(f"unknown inventory type {type!r}")
             
         self.id = id
         self.z = 1
@@ -126,6 +126,8 @@ class Item(pygameui.Sprite):
                 self.image = _IronOreSprite
             case fac.Items.SteelIngot:
                 self.image = _SteelIngotSprite
+            case _:
+                raise ValueError(f"unknown item type {item.name!r}")
         
         self.item = item
 
