@@ -41,31 +41,40 @@ _IronOreSprite = image.load(f"Images/Ore/IronOre.png").convert_alpha()
 
 _SteelIngotSprite = image.load(f"Images/Ingot/SteelIngot.png").convert_alpha()
 
-class Drill(pygameui.AnimatableSprite):
-    def __init__(self, x, y, id, worldPos, **kwargs):
+class Producer(pygameui.AnimatableSprite):
+    def __init__(self, x, y, id, worldPos, type, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
-        self.image = _DrillFrames[0]
+        match type:
+            case "Drill":
+                self.image = _DrillFrames[0]
+                
+                self.addAnimation("drill", *_DrillFrames)
+                self.startAnimation("drill", 8)
+            case _:
+                raise ValueError("unknown producer type")
         
-        self.addAnimation("drill", *_DrillFrames)
-        self.startAnimation("drill", 8)
         self.id = id
         self.z = 1
         
         self.worldPos = worldPos
 
-class ConveyorBelt(pygameui.AnimatableSprite):    
-    def __init__(self, x, y, id, worldPos, speed = 8, bent = False, **kwargs):
+class Transport(pygameui.AnimatableSprite):    
+    def __init__(self, x, y, id, worldPos, type, speed = 8, bent = False, **kwargs):
         super().__init__(x, y, w = 1 * 64, h = 1 * 64, autoAnimate = False, **kwargs)
         
-        if bent:
-            self.image = _ConveyorTurnFrames[0]
-            self.addAnimation("move", *_ConveyorTurnFrames)
-        else:
-            self.image = _ConveyorStraightFrames[0]
-            self.addAnimation("move", *_ConveyorStraightFrames)
-            
-        self.currentAnimation = "move"
+        match type:
+            case "Conveyor":
+                if bent:
+                    self.image = _ConveyorTurnFrames[0]
+                    self.addAnimation("move", *_ConveyorTurnFrames)
+                else:
+                    self.image = _ConveyorStraightFrames[0]
+                    self.addAnimation("move", *_ConveyorStraightFrames)
+                    
+                self.currentAnimation = "move"
+            case _:
+                raise ValueError("unknown transport type")
             
         self.speed = speed
         self.id = id
@@ -74,23 +83,33 @@ class ConveyorBelt(pygameui.AnimatableSprite):
         self.worldPos = worldPos
         self.significant = False
         
-class Furnace(pygameui.AnimatableSprite):
-    def __init__(self, x, y, id, worldPos, **kwargs):
+class Machine(pygameui.AnimatableSprite):
+    def __init__(self, x, y, id, worldPos, type, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
-        self.image = _FurnaceFrames[0]
-        self.addAnimation("cook", *_FurnaceFrames)
-        self.startAnimation("cook", 10)
+        match type:
+            case "Furnace":
+                self.image = _FurnaceFrames[0]
+                self.addAnimation("cook", *_FurnaceFrames)
+                self.startAnimation("cook", 10)
+            case _:
+                raise ValueError("unknown machine type")
+            
         self.id = id
         self.z = 1
         
         self.worldPos = worldPos
 
-class Box(pygameui.Sprite):
-    def __init__(self, x, y, id, worldPos, **kwargs):
+class Inventory(pygameui.Sprite):
+    def __init__(self, x, y, id, worldPos, type, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
-        #self.addAnimation("move", *ConveyorStraightFrames)
+        match type:
+            case "Box":
+                ... # no assets yet
+            case _:
+                raise ValueError("unknown inventory type")
+            
         self.id = id
         self.z = 1
         
@@ -110,9 +129,6 @@ class Item(pygameui.Sprite):
         
         self.item = item
 
-#todo fix naive class types. this is exactly the trap i was trying to avoid when making the data-driven factory
-#todo making them general is much better
-
 def lerp(start, end, t):
     return start + (end - start) * t
 
@@ -122,11 +138,12 @@ def worldToSreen(worldPos):
     return (screenx, screeny)
 
 def isOffscreen(pos):
-    tolerance = (renderDistance + 2) * 64
+    tolerance = (renderDistance + 1) * 64
     
-    if pos[0] < -tolerance or pos[0] > winx + tolerance:
+    # shift by one tile due to position refering to the upperleft of a sprite
+    if pos[0] < -tolerance - 64 or pos[0] > winx + tolerance - 64:
         return True
-    if pos[1] < -tolerance or pos[1] > winy + tolerance:
+    if pos[1] < -tolerance - 64 or pos[1] > winy + tolerance - 64:
         return True
     
     return False
@@ -243,34 +260,28 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             key = (transport.id, turnPos)
             
             if not isOffscreen(position) and key not in visibleTransportSprites:
-                if transport.type == "ConveyorBelt":
-                    
-                    # check if first or last transport should bend
-                    if bent is not None:
-                        conveyor = ConveyorBelt(position[0], position[1], id, turnPos, speed = transport.speed, bent = bent)
-                        conveyor.rotation = previousDirection.value if bent else turnDir.value
-                    else:
-                        conveyor = ConveyorBelt(position[0], position[1], id, turnPos, speed = transport.speed, bent = True)
-                        conveyor.rotation = previousDirection.value
-                    
-                    # flip if needed
-                    # honestly trial and error to figure this out. dont touch.
-                    if (previousDirection, turnDir) in leftTurns:
-                        if previousDirection is fac.Directions.East:
-                            if turnDir is fac.Directions.North:
-                                conveyor.setFlipped(x = True)
-                            else:
-                                conveyor.setFlipped(y = True)
-                        else:
-                            conveyor.setFlipped(x = True)
-                    
-                    # add to visible sprite list
-                    _addTransportSprite(transport, turnPos, conveyor)
-                    conveyor.frame = _transportFrameSync
+                # check if first or last transport should bend
+                if bent is not None:
+                    conveyor = Transport(position[0], position[1], id, turnPos, transport.type, speed = transport.speed, bent = bent)
+                    conveyor.rotation = previousDirection.value if bent else turnDir.value
                 else:
-                    raise ValueError("unknown transport type")
-            
-            #todo the above should be generalised before it becomes if statement spam
+                    conveyor = Transport(position[0], position[1], id, turnPos, transport.type, speed = transport.speed, bent = True)
+                    conveyor.rotation = previousDirection.value
+                
+                # flip if needed
+                # honestly trial and error to figure this out. dont touch.
+                if (previousDirection, turnDir) in leftTurns:
+                    if previousDirection is fac.Directions.East:
+                        if turnDir is fac.Directions.North:
+                            conveyor.setFlipped(x = True)
+                        else:
+                            conveyor.setFlipped(y = True)
+                    else:
+                        conveyor.setFlipped(x = True)
+                
+                # add to visible sprite list
+                _addTransportSprite(transport, turnPos, conveyor)
+                conveyor.frame = _transportFrameSync
             
             # find length and direction between significant points
             deltaX = turnPos[0] - previousPos[0]
@@ -294,17 +305,11 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 screenPos = worldToSreen(pos)
                 key = (transport.id, pos)
                 
-                # make sure transport is a known type
                 if not isOffscreen(screenPos) and key not in visibleTransportSprites:
-                    if transport.type == "ConveyorBelt":
-                        conveyor = ConveyorBelt(screenPos[0], screenPos[1], id, pos, speed = transport.speed)
-                        conveyor.rotation = previousDirection.value
-                        _addTransportSprite(transport, pos, conveyor)
-                        conveyor.frame = _transportFrameSync
-                    else:
-                        raise ValueError("unknown transport type")
-                
-                #todo the above should be generalised before it becomes if statement spam
+                    conveyor = Transport(screenPos[0], screenPos[1], id, pos, transport.type, speed = transport.speed)
+                    conveyor.rotation = previousDirection.value
+                    _addTransportSprite(transport, pos, conveyor)
+                    conveyor.frame = _transportFrameSync
             
             previousDirection = turnDir
             previousPos = turnPos
@@ -316,16 +321,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         
         screenPos = worldToSreen(pos)
         
-        # ensure producer is a known type
         if not isOffscreen(screenPos):
-            if producer.type == "Drill":
-                drill = Drill(screenPos[0], screenPos[1], id, pos)
-                drill.rotation = producer.rotation.value
-                _addComponentSprite(id, drill)
-            else:
-                raise ValueError("unknown producer type")
-        
-        #todo the above should be generalised before it becomes if statement spam
+            drill = Producer(screenPos[0], screenPos[1], id, pos, producer.type)
+            drill.rotation = producer.rotation.value
+            _addComponentSprite(id, drill)
     
     # decode for machines
     elif id in factory.machines:
@@ -334,34 +333,22 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         
         screenPos = worldToSreen(pos)
         
-        # ensure machine is a known type
         if not isOffscreen(screenPos):
-            if machine.type == "Furnace":
-                furnace = Furnace(screenPos[0], screenPos[1], id, pos)
-                furnace.rotation = machine.rotation.value
-                _addComponentSprite(id, furnace)
-            else:
-                raise ValueError("unknown producer type")
-        
-        #todo the above should be generalised before it becomes if statement spam
+            furnace = Machine(screenPos[0], screenPos[1], id, pos, machine.type)
+            furnace.rotation = machine.rotation.value
+            _addComponentSprite(id, furnace)
     
-    # decode for machines
+    # decode for inventories
     elif id in factory.inventories:
         inventory = factory.inventories[id]
         pos = inventory.position
         
         screenPos = worldToSreen(pos)
         
-        # ensure inventory is a known type
         if not isOffscreen(screenPos):
-            if inventory.type == "Box":
-                box = Box(screenPos[0], screenPos[1], id, pos)
-                box.rotation = inventory.rotation.value
-                _addComponentSprite(id, box)
-            else:
-                raise ValueError("unknown producer type")
-        
-        #todo the above should be generalised before it becomes if statement spam
+            box = Inventory(screenPos[0], screenPos[1], id, pos, inventory.type)
+            box.rotation = inventory.rotation.value
+            _addComponentSprite(id, box)
     
 def _renderVisibleItems(factory: fac.Factory):
     global nextVisibleItemid
