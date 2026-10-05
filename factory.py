@@ -40,6 +40,7 @@ class Machine():
     size: tuple[int, int]                       # how many tiles the machine takes up, x by y from position
     position: tuple[int, int] = (0, 0)
     rotation: Directions = Directions.North
+    flipped: tuple[bool, bool] = (False, False)  # (flipped x, flipped y)
     input_inventory: dict[Items, int] = field(default_factory = dict)
     output_inventory: dict[Items, int] = field(default_factory = dict)
     input: list[int] | None = None
@@ -63,15 +64,17 @@ class Transport():
     itemids: list[int] = field(default_factory = list)
     lastDestroyedid: int = 0
     id: int = 0
-    # input: int | None   <- perhaps unnecessary?
+    # input: int | None   <- may be needed if conveyors can connect into other conveyors
     # output: int | None  <- 
 
 @dataclass
 class Inventory():
     type: str
     maxItems: int
+    size: tuple[int, int]
     position: tuple[int, int] = (0, 0)
     rotation: Directions = Directions.North
+    flipped: tuple[bool, bool] = (False, False)  # (flipped x, flipped y)
     inventory: dict[Items, int] = field(default_factory = dict)
     input: list[int] | None = None
     output: list[int] | None = None
@@ -87,8 +90,10 @@ class Producer():
     speed: int
     efficiency: int
     maxItems: int
+    size: tuple[int, int]
     position: tuple[int, int] = (0, 0)
     rotation: Directions = Directions.North
+    flipped: tuple[bool, bool] = (False, False)  # (flipped x, flipped y)
     inventory: dict[Items, int] = field(default_factory = dict)
     output: list[int] | None = None
     progress: float = 0
@@ -97,8 +102,10 @@ class Producer():
     def totalItems(self) -> int:
         return sum(self.inventory.values())
 
+#todo add routers
+
 conveyor = Transport(
-    type = "ConveyorBelt",
+    type = "StandardConveyorBelt",
     speed = 2,
     length = 10,
     # input = None,
@@ -119,20 +126,26 @@ drill = Producer(
     speed = 1,
     efficiency = 1,
     maxItems = 5,
+    size = [2, 2]
 )
 
 drill2 = Producer(
     type = "Drill",
     material = Items.IronOre,
-    speed = 2,
-    efficiency = 1,
+    speed = 4,
+    efficiency = 5,
     maxItems = 5,
+    size = [2, 2]
 )
 
-box = Inventory(
-    type = "Box",
+basicContainer = Inventory(
+    type = "BasicContainer",
     maxItems = 10,
+    size = [2, 2]
 )
+
+#!    size is currently unused.
+#todo make it matter when instantiating sprites
 
 class Factory():
     def __init__(self):
@@ -156,12 +169,14 @@ class Factory():
     def updateProducer(self, producerid: int, *,
                        outputids: list[int] = _MISSING,
                        position: tuple[int, int] = _MISSING,
-                       rotation: Directions = _MISSING):
+                       rotation: Directions = _MISSING,
+                       flipped: tuple[bool, bool] = _MISSING):
         producer = self.producers[producerid]
         
         if outputids is not _MISSING: producer.output = outputids
         if position  is not _MISSING: producer.position = position
         if rotation  is not _MISSING: producer.rotation = rotation
+        if flipped   is not _MISSING: producer.flipped = flipped
     
     def destroyProducer(self, producerid: int):
         del self.producers[producerid]
@@ -182,13 +197,15 @@ class Factory():
     def updateMachine(self, machineid: int, *, 
                       inputids: list[int] = _MISSING, outputid: int = _MISSING, recipe: Recipe = _MISSING,
                       position: tuple[int, int] = _MISSING,
-                      rotation: Directions = _MISSING):
+                      rotation: Directions = _MISSING,
+                      flipped: tuple[bool, bool] = _MISSING):
         machine = self.machines[machineid]
         
         if inputids is not _MISSING: machine.input = inputids
         if outputid is not _MISSING: machine.output = outputid
         if position is not _MISSING: machine.position = position
         if rotation is not _MISSING: machine.rotation = rotation
+        if flipped  is not _MISSING: machine.flipped = flipped
         if recipe   is not _MISSING: 
             machine.currentRecipe = recipe
             self.clearMachineInv(machineid)
@@ -259,10 +276,9 @@ class Factory():
         transport = self.transports[transportid]
         
         if not transport.turns:
-            print(turn[1])
             transport.initialDirection = turn[1]
         
-        transport.finalDirection = turn[1]
+        transport.finalDirection = turn[1] # maybe this is supposed to be -1 but if it aint broke dont fix it
         
         transport.turns.append(turn)
         
@@ -270,7 +286,25 @@ class Factory():
         
         self.updateTransport(transportid, length = length)
     
-    #todo add extend transport turn helper for end and start of conveyor
+    def extendTransportTurn(self, transportid: int, amount: int, isEnd = bool):
+        transport = self.transports[transportid]
+        
+        turnToExtend = transport.turns[-1] if isEnd else transport.turns[0]
+        turnDirection = turnToExtend[1]
+        
+        # sign switch as extending the start would mean to extend backwards
+        sign = 1 if isEnd else -1
+        
+        # check direction to extend properly
+        if turnDirection is Directions.East:
+            turnToExtend[0] = (turnToExtend[0][0] + (amount * sign), turnToExtend[0][1]) # tuples are immutable so this is ugly but i dont care
+        elif turnDirection is Directions.West:
+            turnToExtend[0] = (turnToExtend[0][0] - (amount * sign), turnToExtend[0][1])
+        elif turnDirection is Directions.North:
+            turnToExtend[0] = (turnToExtend[0][0], turnToExtend[0][1] - (amount * sign))
+        elif turnDirection is Directions.South:
+            turnToExtend[0] = (turnToExtend[0][0], turnToExtend[0][1] + (amount * sign))
+            
     #todo add split conveyor helper
         
     def destroyTransport(self, transportid: int):
@@ -289,13 +323,15 @@ class Factory():
     def updateInventory(self, inventoryid: int, *,
                         inputids: list[int] = _MISSING, outputids: list[int] = _MISSING,
                         position: tuple[int, int] = _MISSING,
-                        rotation: Directions = _MISSING):
+                        rotation: Directions = _MISSING,
+                        flipped: tuple[bool, bool] = _MISSING):
         inventory = self.inventories[inventoryid]
         
         if inputids  is not _MISSING: inventory.input = inputids
         if outputids is not _MISSING: inventory.output = outputids
         if position  is not _MISSING: inventory.position = position
         if rotation  is not _MISSING: inventory.rotation = rotation
+        if flipped   is not _MISSING: inventory.flipped = flipped
     
     def destroyInventory(self, inventoryid: int):
         del self.inventories[inventoryid]
@@ -507,4 +543,4 @@ class Factory():
         
         # todo fix known edgecases
         # conveyor cannot loop into itself
-        # large step in dt could overrun producer / furnace timers and stop it from being produced
+        # large step in dt could overrun producer / furnace timers and stop it from being produced for one time

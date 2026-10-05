@@ -33,13 +33,15 @@ _DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i i
 
 _FurnaceFrames = [image.load(f"Images/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
 
+_BasicContainerSprite = image.load("Images/Container/BasicContainer.png").convert_alpha()
+
 _ConveyorStraightFrames = [image.load(f"Images/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
 _ConveyorTurnFrames =     [image.load(f"Images/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
-_CoalSprite = image.load(f"Images/Ore/Coal.png").convert_alpha()
-_IronOreSprite = image.load(f"Images/Ore/IronOre.png").convert_alpha()
+_CoalSprite = image.load("Images/Ore/Coal.png").convert_alpha()
+_IronOreSprite = image.load("Images/Ore/IronOre.png").convert_alpha()
 
-_SteelIngotSprite = image.load(f"Images/Ingot/SteelIngot.png").convert_alpha()
+_SteelIngotSprite = image.load("Images/Ingot/SteelIngot.png").convert_alpha()
 
 class Producer(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
@@ -47,7 +49,8 @@ class Producer(pygameui.AnimatableSprite):
         
         match type:
             case "Drill":
-                self.image = _DrillFrames[0]
+                self._image = _DrillFrames[0]
+                self._OriginalImage = _DrillFrames[0]
                 
                 self.addAnimation("drill", *_DrillFrames)
                 self.startAnimation("drill", 8)
@@ -66,10 +69,10 @@ class Transport(pygameui.AnimatableSprite):
         match type:
             case "StandardConveyorBelt":
                 if bent:
-                    self.image = _ConveyorTurnFrames[0]
+                    self.changeImage(_ConveyorTurnFrames[0])
                     self.addAnimation("move", *_ConveyorTurnFrames)
                 else:
-                    self.image = _ConveyorStraightFrames[0]
+                    self.changeImage(_ConveyorStraightFrames[0])
                     self.addAnimation("move", *_ConveyorStraightFrames)
                     
                 self.currentAnimation = "move"
@@ -89,7 +92,7 @@ class Machine(pygameui.AnimatableSprite):
         
         match type:
             case "Furnace":
-                self.image = _FurnaceFrames[0]
+                self.changeImage(_FurnaceFrames[0])
                 self.addAnimation("cook", *_FurnaceFrames)
                 self.startAnimation("cook", 10)
             case _:
@@ -105,8 +108,8 @@ class Inventory(pygameui.Sprite):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
         match type:
-            case "Box":
-                ... # no assets yet
+            case "BasicContainer":
+                self.changeImage(_BasicContainerSprite)
             case _:
                 raise ValueError(f"unknown inventory type {type!r}")
             
@@ -121,11 +124,11 @@ class Item(pygameui.Sprite):
         
         match item:
             case fac.Items.Coal:
-                self.image = _CoalSprite
+                self.changeImage(_CoalSprite)
             case fac.Items.IronOre:
-                self.image = _IronOreSprite
+                self.changeImage(_IronOreSprite)
             case fac.Items.SteelIngot:
-                self.image = _SteelIngotSprite
+                self.changeImage(_SteelIngotSprite)
             case _:
                 raise ValueError(f"unknown item type {item.name!r}")
         
@@ -140,7 +143,7 @@ def worldToSreen(worldPos):
     return (screenx, screeny)
 
 def isOffscreen(pos):
-    tolerance = (renderDistance + 1) * 64
+    tolerance = (renderDistance) * 64
     
     # shift by one tile due to position refering to the upperleft of a sprite
     if pos[0] < -tolerance - 64 or pos[0] > winx + tolerance - 64:
@@ -326,6 +329,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         if not isOffscreen(screenPos):
             drill = Producer(screenPos[0], screenPos[1], id, pos, producer.type)
             drill.rotation = producer.rotation.value
+            drill.setFlipped(*producer.flipped)
             _addComponentSprite(id, drill)
     
     # decode for machines
@@ -338,6 +342,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         if not isOffscreen(screenPos):
             furnace = Machine(screenPos[0], screenPos[1], id, pos, machine.type)
             furnace.rotation = machine.rotation.value
+            furnace.setFlipped(*machine.flipped)
             _addComponentSprite(id, furnace)
     
     # decode for inventories
@@ -350,6 +355,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
         if not isOffscreen(screenPos):
             box = Inventory(screenPos[0], screenPos[1], id, pos, inventory.type)
             box.rotation = inventory.rotation.value
+            box.setFlipped(*inventory.flipped)
             _addComponentSprite(id, box)
     
 def _renderVisibleItems(factory: fac.Factory):

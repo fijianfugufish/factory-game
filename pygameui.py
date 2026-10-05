@@ -260,6 +260,10 @@ class Image(UI):
     def image(self, value):
         self._image = transform.scale(value, (self.w, self.h))
     
+    def changeImage(self, value):
+        self._image = transform.scale(value, (self.w, self.h))
+        self._OriginalImage = self._image
+    
     def setFlipped(self, x = False, y = False):
         rotated_OriginalImage = transform.rotate(self._OriginalImage, self.rotation)
         self.image = transform.flip(rotated_OriginalImage, x, y)
