@@ -1,6 +1,7 @@
 from pygame import *
 import factory as fac
-from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight
+from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld
+from encodeFactory import placeComponent
 import pygameui
 
 def drawAll(window, dt):
@@ -20,18 +21,15 @@ def main():
     coal1 = mainFactory.addProducer(fac.drill)
     iron1 = mainFactory.addProducer(fac.drill2)
     furnace1 = mainFactory.addMachine(fac.furnace)
-    box1 = mainFactory.addInventory(fac.basicContainer)
     mainFactory.updateProducer(coal1, position=(1,1), rotation=fac.Directions.East)
     mainFactory.updateProducer(iron1, position=(10,1), rotation=fac.Directions.East, flipped = (True, False))
     mainFactory.updateMachine(furnace1, position=(5,6), rotation=fac.Directions.North)
-    mainFactory.updateInventory(box1, position=(5,10))
     coalT1 = mainFactory.addTransport(fac.conveyor)
     ironT1 = mainFactory.addTransport(fac.conveyor)
     steelT1 = mainFactory.addTransport(fac.conveyor)
     mainFactory.updateProducer(coal1, outputids=[coalT1])
     mainFactory.updateProducer(iron1, outputids=[ironT1])
     mainFactory.updateMachine(furnace1, inputids=[coalT1,ironT1], outputid=steelT1, recipe=fac.steelRecipe)
-    mainFactory.updateInventory(box1, inputids=[steelT1])
     mainFactory.addTransportTurn(coalT1, [(3,2), fac.Directions.East])
     mainFactory.addTransportTurn(coalT1, [(5,2), fac.Directions.South])
     mainFactory.addTransportTurn(coalT1, [(5,5), fac.Directions.South])
@@ -39,9 +37,17 @@ def main():
     mainFactory.addTransportTurn(ironT1, [(6,2), fac.Directions.South])
     mainFactory.addTransportTurn(ironT1, [(6,5), fac.Directions.South])
     mainFactory.addTransportTurn(steelT1, [(5,8), fac.Directions.South])
-    mainFactory.addTransportTurn(steelT1, [(5,9), fac.Directions.South])
+    mainFactory.addTransportTurn(steelT1, [(5,9), fac.Directions.East])
+    mainFactory.addTransportTurn(steelT1, [(8,9), fac.Directions.South])
+
+    #mainFactory.extendTransportTurn(steelT1, 1, True)
     
     decodeAndRender(mainFactory, forceRender = True)
+    
+    direction = fac.Directions.North
+    flipx = False
+    flipy = False
+    bent = False
     
     while gameRunning:
         # main game loop
@@ -54,6 +60,20 @@ def main():
         for e in events:
             if e.type == QUIT:
                 gameRunning = False
+            
+            if e.type == KEYDOWN:
+                if e.key == K_b:
+                    placeComponent(mainFactory, fac.conveyor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_r:
+                    direction = fac.Directions((direction.value + 90) % 360)
+                elif e.key == K_x:
+                    flipx = not flipx
+                elif e.key == K_y:
+                    flipy = not flipy
+                elif e.key == K_p:
+                    bent = not bent
+                    print(bent)
             
             pygameui.Button.handleAllButtons(mouse.get_pos(), e.type)
         
