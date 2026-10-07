@@ -210,12 +210,12 @@ class Factory():
             machine.currentRecipe = recipe
             self.clearMachineInv(machineid)
             machine.progress = 0
-            
     
     def destroyMachine(self, machineid: int):
         del self.machines[machineid]
     
     def addTransport(self, transportTemplate: Transport) -> int:
+        
         transport = deepcopy(transportTemplate)
         
         transport.id = self.nextid
@@ -269,28 +269,68 @@ class Factory():
             cumulativeLength += dx + dy
             
             if cumulativeLength > itemPos / 2: break
-            
+        
+        # handle unmatching directional end
+        if i == len(transport.turns) - 1 and itemPos / 2 >= cumulativeLength:
+            incomingDirection = transport.turns[i - 1][1]
+            outgoingDirection = transport.finalDirection
+
+            if incomingDirection is not outgoingDirection:
+                x, y = turnPos
+
+                if outgoingDirection is Directions.East:
+                    endPoint = (x + 1, y)
+                elif outgoingDirection is Directions.West:
+                    endPoint = (x - 1, y)
+                elif outgoingDirection is Directions.North:
+                    endPoint = (x, y - 1)
+                elif outgoingDirection is Directions.South:
+                    endPoint = (x, y + 1)
+
+                return (turnPos, endPoint, cumulativeLength)
+
         return (prevTurnPos, turnPos, cumulativeLength - dx - dy)
     
     def addTransportTurn(self, transportid: int, turn: list[tuple[int, int] | Directions]): 
+        if transportid is None: return
+        
         transport = self.transports[transportid]
         
         if not transport.turns:
             transport.initialDirection = turn[1]
         
-        transport.finalDirection = turn[1] # maybe this is supposed to be -1 but if it aint broke dont fix it
+        transport.finalDirection = turn[-1] # maybe this is supposed to be -1 but if it aint broke dont fix it
         
         transport.turns.append(turn)
         
         length = self.calculateTransportLength(transportid)
         
         self.updateTransport(transportid, length = length)
-    
-    def extendTransportTurn(self, transportid: int, amount: int, isEnd = bool):
+
+    def changeTransportTurn(self, transportid: int, turn: list[tuple[int, int] | Directions], isEnd: bool): 
+        if transportid is None: return
+        
+        transport = self.transports[transportid]
+        
+        turnToExtend = -1 if isEnd else 0
+        
+        pos = turn[0] if turn[0] is not None else transport.turns[turnToExtend][0]
+        direction = turn[1]
+        
+        transport.turns[turnToExtend] = (pos, direction)
+        
+        if isEnd:
+            transport.finalDirection = direction
+        else:
+            transport.initialDirection = direction
+        
+    def extendTransportTurn(self, transportid: int, amount: int, isEnd: bool):
+        if transportid is None: return
+        
         transport = self.transports[transportid]
         
         turnToExtend = transport.turns[-1] if isEnd else transport.turns[0]
-        turnDirection = turnToExtend[1]
+        turnDirection = transport.finalDirection if isEnd else transport.initialDirection
         
         # sign switch as extending the start would mean to extend backwards
         sign = 1 if isEnd else -1
@@ -304,7 +344,12 @@ class Factory():
             turnToExtend[0] = (turnToExtend[0][0], turnToExtend[0][1] - (amount * sign))
         elif turnDirection is Directions.South:
             turnToExtend[0] = (turnToExtend[0][0], turnToExtend[0][1] + (amount * sign))
-            
+        
+        length = self.calculateTransportLength(transportid)
+                
+        self.updateTransport(transportid, length = length)
+    
+    #todo add combine conveyor helper
     #todo add split conveyor helper
         
     def destroyTransport(self, transportid: int):
