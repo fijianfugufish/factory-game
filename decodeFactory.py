@@ -252,7 +252,12 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             
             # check next direction to see if it lines up, only for the first and last transport
             numTurns = len(transport.turns)
-            if (i == numTurns - 1 or i == 0) and numTurns > 1:
+            if numTurns == 1:
+                previousDirection = transport.initialDirection
+                turnDir = transport.finalDirection
+                bent = previousDirection is not turnDir
+
+            elif i == numTurns - 1 or i == 0:
                 # check next position if first transport, else check previous
                 if i == 0:
                     nextPos = transport.turns[i + 1][0] 

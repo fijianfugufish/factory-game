@@ -39,6 +39,7 @@ def main():
     mainFactory.addTransportTurn(steelT1, [(5,8), fac.Directions.South])
     mainFactory.addTransportTurn(steelT1, [(5,9), fac.Directions.East])
     mainFactory.addTransportTurn(steelT1, [(8,9), fac.Directions.South])
+    mainFactory.addTransportTurn(steelT1, [(8,10), fac.Directions.East])
 
     #mainFactory.extendTransportTurn(steelT1, 1, True)
     
