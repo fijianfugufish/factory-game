@@ -91,7 +91,7 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
         fac.Directions.South: (0, 1)
     }
 
-    if flip[1]:  # YOUR Y-axis mirror = left/right
+    if flip[1]:
         if orientation is fac.Directions.East:
             orientation = fac.Directions.West
         elif orientation is fac.Directions.West:
