@@ -21,8 +21,8 @@ def main():
     coal1 = mainFactory.addProducer(fac.drill)
     iron1 = mainFactory.addProducer(fac.drill2)
     furnace1 = mainFactory.addMachine(fac.furnace)
-    mainFactory.updateProducer(coal1, position=(1,1), rotation=fac.Directions.East)
-    mainFactory.updateProducer(iron1, position=(10,1), rotation=fac.Directions.East, flipped = (True, False))
+    mainFactory.updateProducer(coal1, position=(1,1), rotation=fac.Directions.East, flipped = (True, False))
+    mainFactory.updateProducer(iron1, position=(10,1), rotation=fac.Directions.East)
     mainFactory.updateMachine(furnace1, position=(5,6), rotation=fac.Directions.North)
     mainFactory.updateMachine(furnace1, inputids=None, outputid=None, recipe=fac.steelRecipe)
 

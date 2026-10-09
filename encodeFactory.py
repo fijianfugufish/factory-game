@@ -119,13 +119,6 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
         existing = factory.transports[transp]
         turns = existing.turns
 
-        print("BEHIND")
-        print("existing final:", existing.finalDirection)
-        print("new incoming:", orientation)
-        print("flip:", flip)
-        print("bent:", bent)
-        print("bend outgoing:", bendDirection)
-
         if turns[-1][0] == pos and transport.type == existing.type and existing.finalDirection is orientation:
             extendForward = True
             id1 = transp
@@ -146,13 +139,6 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
         existing = factory.transports[transp]
         turns = existing.turns
         
-        print("FRONT")
-        print("existing initial:", existing.initialDirection)
-        print("new outgoing:", bendDirection)
-        print("flip:", flip)
-        print("bent:", bent)
-        print("incoming:", orientation)
-
         if turns[0][0] == pos and transport.type == existing.type and existing.initialDirection is bendDirection:
             extendBackward = True
             id2 = transp
