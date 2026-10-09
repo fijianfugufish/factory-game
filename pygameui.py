@@ -265,7 +265,7 @@ class Image(UI):
         self._OriginalImage = self._image
     
     def setFlipped(self, x = False, y = False):
-        rotated_OriginalImage = transform.rotate(self._OriginalImage, self.rotation)
+        rotated_OriginalImage = transform.rotate(self._OriginalImage, -self.rotation)
         self.image = transform.flip(rotated_OriginalImage, x, y)
     
     def draw(self, window):
@@ -373,14 +373,14 @@ class AnimatableSprite(Sprite):
     def setFlipped(self, x = False, y = False):
         center = self.rect.center
         
-        rotated_OriginalImage = transform.rotate(self._OriginalImage, self.rotation)
+        rotated_OriginalImage = transform.rotate(self._OriginalImage, -self.rotation)
         self.image = transform.flip(rotated_OriginalImage, x, y)
         
         self.rect = self.image.get_rect(center = center)
         
         for animation in self.animations:
             for i, frame in enumerate(self._originalAnimations[animation]):
-                rotatedFrame = transform.rotate(frame, self.rotation)
+                rotatedFrame = transform.rotate(frame, -self.rotation)
                 frame = transform.flip(rotatedFrame, x, y)
                 self.animations[animation][i] = frame
     

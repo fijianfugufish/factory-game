@@ -312,13 +312,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                 # flip if needed
                 # honestly trial and error to figure this out. dont touch.
                 if (previousDirection, turnDir) in leftTurns:
-                    if previousDirection is fac.Directions.East:
-                        if turnDir is fac.Directions.North:
-                            conveyor.setFlipped(x = True)
-                        else:
-                            conveyor.setFlipped(y = True)
+                    if previousDirection in (fac.Directions.North, fac.Directions.South):
+                        conveyor.setFlipped(x=True)
                     else:
-                        conveyor.setFlipped(x = True)
+                        conveyor.setFlipped(y=True)
                 
                 # add to visible sprite list
                 _addTransportSprite(transport, turnPos, conveyor)
@@ -447,107 +444,108 @@ def _renderVisibleItems(factory: fac.Factory):
         while transport.lastDestroyedid in visibleItems:
             visibleItems[transport.lastDestroyedid].destroy()
             del visibleItems[transport.lastDestroyedid]
-
+            
 def _findAllOnscreen(factory: fac.Factory):
     for transport in factory.transports.values():
         for turn in transport.turns:
             position = turn[0]
             offscreen = isOffscreen(worldToSreen(position))
-            
+
             # append to list of visible transports if any significant point is onscreen
             if not offscreen and transport.id not in visibleTransports:
                 visibleTransports.add(transport.id)
                 break # ensure copies wont fill up the list
+
             elif offscreen and transport.id in visibleTransports:
                 visibleTransports.remove(transport.id)
-    
+
     for producer in factory.producers.values():
         offscreen = isOffscreen(worldToSreen(producer.position))
-        
+
+        width, height = producer.size
+
+        if producer.rotation in (fac.Directions.East, fac.Directions.West):
+            width, height = height, width
+
         if not isOffscreen(worldToSreen(producer.position)) and producer.id not in visibleProducers:
             visibleProducers.add(producer.id)
+
             # add occupied positions
-            occupiedSpaces.update((producer.position[0] + i, producer.position[1] + j) for i in range(2) for j in range(2))
-            
-            for x in range(producer.size[0]):
-                for y in range(producer.size[1]):
+            for x in range(width):
+                for y in range(height):
                     pos = (producer.position[0] + x, producer.position[1] + y)
                     occupiedSpaces.add(pos)
                     visibleComponentsAt[pos] = producer.id
-            
+
         elif offscreen and producer.id in visibleProducers:
             visibleProducers.remove(producer.id)
             _destroyComponentSprites(producer.id)
-            
+
             # remove occupied positions
-            for i in range(2):
-                for j in range(2):
-                    occupiedSpaces.remove((producer.position[0] + i, producer.position[1] + j))
-            
-            for x in range(producer.size[0]):
-                for y in range(producer.size[1]):
+            for x in range(width):
+                for y in range(height):
                     pos = (producer.position[0] + x, producer.position[1] + y)
                     occupiedSpaces.discard(pos)
                     visibleComponentsAt.pop(pos, None)
-    
+
     for machine in factory.machines.values():
         offscreen = isOffscreen(worldToSreen(machine.position))
-        
+
+        width, height = machine.size
+
+        if machine.rotation in (fac.Directions.East, fac.Directions.West):
+            width, height = height, width
+
         if not isOffscreen(worldToSreen(machine.position)) and machine.id not in visibleMachines:
             visibleMachines.add(machine.id)
+
             # add occupied positions
-            occupiedSpaces.update((machine.position[0] + i, machine.position[1] + j) for i in range(2) for j in range(2))
-            
-            for x in range(machine.size[0]):
-                for y in range(machine.size[1]):
+            for x in range(width):
+                for y in range(height):
                     pos = (machine.position[0] + x, machine.position[1] + y)
                     occupiedSpaces.add(pos)
                     visibleComponentsAt[pos] = machine.id
-            
+
         elif offscreen and machine.id in visibleMachines:
             visibleMachines.remove(machine.id)
             _destroyComponentSprites(machine.id)
-            
+
             # remove occupied positions
-            for i in range(2):
-                for j in range(2):
-                    occupiedSpaces.remove((machine.position[0] + i, machine.position[1] + j))
-            
-            for x in range(machine.size[0]):
-                for y in range(machine.size[1]):
+            for x in range(width):
+                for y in range(height):
                     pos = (machine.position[0] + x, machine.position[1] + y)
                     occupiedSpaces.discard(pos)
                     visibleComponentsAt.pop(pos, None)
-                
+
     for inventory in factory.inventories.values():
         offscreen = isOffscreen(worldToSreen(inventory.position))
-        
+
+        width, height = inventory.size
+
+        if inventory.rotation in (fac.Directions.East, fac.Directions.West):
+            width, height = height, width
+
         if not offscreen and inventory.id not in visibleInventories:
             visibleInventories.add(inventory.id)
+
             # add occupied positions
-            occupiedSpaces.update((inventory.position[0] + i, inventory.position[1] + j) for i in range(2) for j in range(2))
-            
-            for x in range(inventory.size[0]):
-                for y in range(inventory.size[1]):
+            for x in range(width):
+                for y in range(height):
                     pos = (inventory.position[0] + x, inventory.position[1] + y)
                     occupiedSpaces.add(pos)
                     visibleComponentsAt[pos] = inventory.id
-            
+
         elif offscreen and inventory.id in visibleInventories:
             visibleInventories.remove(inventory.id)
             _destroyComponentSprites(inventory.id)
-            
+
             # remove occupied positions
-            for i in range(2):
-                for j in range(2):
-                    occupiedSpaces.remove((inventory.position[0] + i, inventory.position[1] + j))
-                    
-            for x in range(inventory.size[0]):
-                for y in range(inventory.size[1]):
+            for x in range(width):
+                for y in range(height):
                     pos = (inventory.position[0] + x, inventory.position[1] + y)
                     occupiedSpaces.discard(pos)
-                    visibleComponentsAt.pop(pos, None)
-        
+                    visibleComponentsAt.pop(pos, None)       
+                     
 def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = False):
     """render all factory components onscreen"""
     global cameraPos, lastCameraPos, renderDistance, _transportFrameSync

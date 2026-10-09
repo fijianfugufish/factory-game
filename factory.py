@@ -117,7 +117,7 @@ furnace = Machine(
     recipes = [steelRecipe],
     progress = 0,
     maxItems = 5,
-    size = [2, 2]
+    size = (2, 2)
 )
 
 drill = Producer(
@@ -126,7 +126,7 @@ drill = Producer(
     speed = 1,
     efficiency = 1,
     maxItems = 5,
-    size = [2, 2]
+    size = (2, 2)
 )
 
 drill2 = Producer(
@@ -135,7 +135,7 @@ drill2 = Producer(
     speed = 4,
     efficiency = 5,
     maxItems = 5,
-    size = [2, 2]
+    size = (2, 2)
 )
 
 basicContainer = Inventory(
