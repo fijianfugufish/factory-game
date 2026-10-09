@@ -33,6 +33,41 @@ def directionBetween(pos1, pos2):
     elif dy < 0:
         return fac.Directions.North
 
+def checkTransportConnections(factory, transportid):
+    transport = factory.transports[transportid]
+
+    directionOffsets = {
+        fac.Directions.North: (0, -1),
+        fac.Directions.East: (1, 0),
+        fac.Directions.South: (0, 1),
+        fac.Directions.West: (-1, 0)
+    }
+
+    dx, dy = directionOffsets[transport.initialDirection]
+    start = transport.turns[0][0]
+    pos = (start[0] - dx, start[1] - dy)
+    checkComponentAt(factory, transportid, pos)
+
+    dx, dy = directionOffsets[transport.finalDirection]
+    end = transport.turns[-1][0]
+    pos = (end[0] + dx, end[1] + dy)
+    checkComponentAt(factory, transportid, pos)
+
+def checkComponentAt(factory, transportid, pos):
+    componentid = dec.visibleComponentsAt.get(pos)
+
+    if componentid is None:
+        return
+
+    if componentid in factory.machines:
+        checkAndConnectMachine(factory, componentid, transportid)
+
+    elif componentid in factory.inventories:
+        inventory = factory.inventories[componentid]
+
+    elif componentid in factory.producers:
+        producer = factory.producers[componentid]
+
 def validateAndEncodeTransport(factory: fac.Factory, transport, 
                                worldPos: tuple[int, int], orientation: fac.Directions,
                                flip: tuple[bool, bool], bent: bool):
@@ -49,18 +84,6 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
         print("occupied")
         return
     
-    # change orientation to account for flip
-    if flip[0]:
-        if orientation is fac.Directions.North:
-            orientation = fac.Directions.South
-        elif orientation is fac.Directions.South:
-            orientation = fac.Directions.North
-    if flip[1]:
-        if orientation is fac.Directions.West:
-            orientation = fac.Directions.East
-        elif orientation is fac.Directions.East:
-            orientation = fac.Directions.West
-    
     directionOffsets = {
         fac.Directions.East: (1, 0),
         fac.Directions.West: (-1, 0),
@@ -68,9 +91,16 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
         fac.Directions.South: (0, 1)
     }
 
-    dx, dy = directionOffsets[orientation]
+    # some xor magic
+    bentSign = -1 if flip[0] ^ flip[1] else 1
 
-    # check for extending at the end
+    if bent:
+        bendDirection = fac.Directions((orientation.value + (90 * bentSign)) % 360)
+    else:
+        bendDirection = orientation
+
+    # check behind the placed conveyor
+    dx, dy = directionOffsets[orientation]
     pos = (worldPos[0] - dx, worldPos[1] - dy)
     transp = dec.visibleTransportsAt.get(pos)
 
@@ -88,7 +118,9 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
                 incomingDirection = directionBetween(turns[-2][0], turns[-1][0])
                 shouldAddForward = existing.finalDirection is not incomingDirection
 
-    # check for extending at the start
+    # check in front of the placed conveyor
+    # for a bend, 'front' is bendDirection
+    dx, dy = directionOffsets[bendDirection]
     pos = (worldPos[0] + dx, worldPos[1] + dy)
     transp = dec.visibleTransportsAt.get(pos)
 
@@ -96,7 +128,7 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
         existing = factory.transports[transp]
         turns = existing.turns
 
-        if turns[0][0] == pos and transport.type == existing.type and existing.initialDirection is orientation:
+        if turns[0][0] == pos and transport.type == existing.type and existing.initialDirection is bendDirection:
             extendBackward = True
             id2 = transp
 
@@ -105,64 +137,134 @@ def validateAndEncodeTransport(factory: fac.Factory, transport,
             else:
                 outgoingDirection = directionBetween(turns[0][0], turns[1][0])
                 shouldAddBackward = existing.initialDirection is not outgoingDirection
-    
-    bentSign = 1 if flip[0] else -1
-                  
+
+    resultTransportId = None
+
     if extendBackward and extendForward:
-        factory.connectTransports(id1, id2)
-        return
-    
+        dec.destroyTransportSprites(id1)
+        dec.destroyTransportSprites(id2)
+
+        factory.connectTransports(id1, id2, worldPos, bent, bendDirection)
+        dec._decodeFactoryComponent(factory, id1)
+
+        resultTransportId = id1
+
     elif extendBackward:
+        transportToExtend = factory.transports[id2]
+
         if shouldAddBackward:
-            transportToExtend = factory.transports[id2]
-            transportToExtend.turns.insert(0, [worldPos, orientation])
+            turnDirection = bendDirection if bent else orientation
+            transportToExtend.turns.insert(0, [worldPos, turnDirection])
             transportToExtend.initialDirection = orientation
             factory.updateTransport(id2, length=factory.calculateTransportLength(id2))
-            
+
+        else:
+            factory.extendTransportTurn(id2, 1, False)
+
             if bent:
-                orientation = fac.Directions((orientation.value - (90 * bentSign)) % 360)
-                factory.transports[id2].initialDirection = orientation
-            
-            return
-        
-        factory.extendTransportTurn(id2, 1, False)
-        
-        if bent:
-            orientation = fac.Directions((orientation.value - (90 * bentSign)) % 360)
-            factory.changeTransportTurn(id2, [None, orientation], False)
-            
-        return
-    
+                pos = transportToExtend.turns[0][0]
+                transportToExtend.turns[0] = [pos, bendDirection]
+                transportToExtend.initialDirection = orientation
+
+        resultTransportId = id2
+
     elif extendForward:
         if shouldAddForward:
             factory.addTransportTurn(id1, [worldPos, orientation])
-            
+
             if bent:
-                orientation = fac.Directions((orientation.value + (90 * bentSign)) % 360)
-                factory.changeTransportTurn(id1, [None, orientation], True)
-                
-            return
-        
-        factory.extendTransportTurn(id1, 1, True)
-        
+                factory.changeTransportTurn(id1, [None, bendDirection], True)
+
+        else:
+            factory.extendTransportTurn(id1, 1, True)
+
+            if bent:
+                factory.changeTransportTurn(id1, [None, bendDirection], True)
+
+        resultTransportId = id1
+
+    else:
+        resultTransportId = factory.addTransport(transport)
+        factory.addTransportTurn(resultTransportId, [worldPos, orientation])
+
         if bent:
-            orientation = fac.Directions((orientation.value + (90 * bentSign)) % 360)
-            factory.changeTransportTurn(id1, [None, orientation], True)
-            print("im so bent yo")
-            
-        return
+            factory.changeTransportTurn(resultTransportId, [None, bendDirection], True)
     
-    # if no connections, create a new transport
-    newTransport = factory.addTransport(transport)
-    factory.addTransportTurn(newTransport, [worldPos, orientation])
+    checkTransportConnections(factory, resultTransportId)
 
-    if bent:
-        newDirection = fac.Directions((orientation.value + (90 * bentSign)) % 360)
-        factory.changeTransportTurn(newTransport, [None, newDirection], True)
-    
-def encodeMachine(factory):...
-    
+def rotateMatrix(matrix, rotations):
+    rotations %= 4
 
+    for _ in range(rotations):
+        matrix = [list(row) for row in zip(*matrix[::-1])]
+
+    return matrix
+
+def flipMatrixX(matrix):
+    return [row[::-1] for row in matrix]
+
+def flipMatrixY(matrix):
+    return matrix[::-1]
+
+def checkAndConnectMachine(factory: fac.Factory, machineid: int, transportid: int):
+    machine = factory.machines[machineid]
+    transport = factory.transports[transportid]
+
+    machineIO = [
+        [1, 1],
+        [-1, 0]
+    ]
+
+    machineIO = rotateMatrix(machineIO, machine.rotation.value // 90)
+
+    if machine.flipped[0]:
+        machineIO = flipMatrixX(machineIO)
+
+    if machine.flipped[1]:
+        machineIO = flipMatrixY(machineIO)
+
+    portDirection = fac.Directions((fac.Directions.South.value + machine.rotation.value) % 360)
+
+    if machine.flipped[0]:
+        if portDirection is fac.Directions.East:
+            portDirection = fac.Directions.West
+        elif portDirection is fac.Directions.West:
+            portDirection = fac.Directions.East
+
+    if machine.flipped[1]:
+        if portDirection is fac.Directions.North:
+            portDirection = fac.Directions.South
+        elif portDirection is fac.Directions.South:
+            portDirection = fac.Directions.North
+
+    directionOffsets = {
+        fac.Directions.North: (0, -1),
+        fac.Directions.East: (1, 0),
+        fac.Directions.South: (0, 1),
+        fac.Directions.West: (-1, 0)
+    }
+
+    dx, dy = directionOffsets[portDirection]
+
+    for y, row in enumerate(machineIO):
+        for x, port in enumerate(row):
+            if port == 0:
+                continue
+
+            machinePortPos = (machine.position[0] + x, machine.position[1] + y)
+
+            if port == 1:
+                transportPos = (machinePortPos[0] - dx, machinePortPos[1] - dy)
+
+                if transport.turns[-1][0] == transportPos and transport.finalDirection is portDirection:
+                    machine.input.append(transportid)
+                    
+            elif port == -1:
+                transportPos = (machinePortPos[0] + dx, machinePortPos[1] + dy)
+
+                if transport.turns[0][0] == transportPos and transport.initialDirection is portDirection:
+                    machine.output = transportid
+    
 def encodeProducer(factory):...
     
 

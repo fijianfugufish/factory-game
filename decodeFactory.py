@@ -30,6 +30,7 @@ componentSprites: dict[int, list[pygameui.Sprite]] = {}
 visibleTransportSprites: dict[tuple[int, tuple[int, int]], pygameui.Sprite] = {}
 occupiedSpaces: set[tuple[int, int]] = set()
 visibleTransportsAt: dict[tuple[int, int], int] = {}
+visibleComponentsAt: dict[tuple[int, int], int] = {}
 
 _DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
 
@@ -145,8 +146,8 @@ def worldToSreen(worldPos):
     return (screenx, screeny)
 
 def screenToWorld(screenPos):
-    worldx = round((screenPos[0] // 64) + cameraPos[0])
-    worldy = round((screenPos[1] // 64) + cameraPos[1])
+    worldx = round((screenPos[0] / 64) + cameraPos[0] - 0.5)
+    worldy = round((screenPos[1] / 64) + cameraPos[1] - 0.5)
     return (worldx, worldy)
 
 def isOffscreen(pos):
@@ -222,6 +223,23 @@ def _unloadOffscreenTransportSprites():
             del visibleTransportsAt[key[1]]
             occupiedSpaces.remove(key[1])
 
+def destroyTransportSprites(transportid):
+    for key, sprite in list(visibleTransportSprites.items()):
+        if key[0] == transportid:
+            sprite.destroy()
+            visibleSprites.remove(sprite)
+
+            pos = key[1]
+
+            del visibleTransportSprites[key]
+
+            if visibleTransportsAt.get(pos) == transportid:
+                del visibleTransportsAt[pos]
+
+            occupiedSpaces.discard(pos)
+
+    visibleTransports.discard(transportid)
+
 def _decodeFactoryComponent(factory: fac.Factory, id: int):
     # component to decode is a transport type        
     if id in factory.transports:
@@ -243,7 +261,7 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             
             if previousPos is None and previousDirection is None:
                 previousPos = turns[0]
-                previousDirection = turns[1]
+                previousDirection = transport.initialDirection
                 
             turnPos = turns[0]
             turnDir = turns[1] if len(turns) > 1 else previousDirection
@@ -451,6 +469,12 @@ def _findAllOnscreen(factory: fac.Factory):
             # add occupied positions
             occupiedSpaces.update((producer.position[0] + i, producer.position[1] + j) for i in range(2) for j in range(2))
             
+            for x in range(producer.size[0]):
+                for y in range(producer.size[1]):
+                    pos = (producer.position[0] + x, producer.position[1] + y)
+                    occupiedSpaces.add(pos)
+                    visibleComponentsAt[pos] = producer.id
+            
         elif offscreen and producer.id in visibleProducers:
             visibleProducers.remove(producer.id)
             _destroyComponentSprites(producer.id)
@@ -459,6 +483,12 @@ def _findAllOnscreen(factory: fac.Factory):
             for i in range(2):
                 for j in range(2):
                     occupiedSpaces.remove((producer.position[0] + i, producer.position[1] + j))
+            
+            for x in range(producer.size[0]):
+                for y in range(producer.size[1]):
+                    pos = (producer.position[0] + x, producer.position[1] + y)
+                    occupiedSpaces.discard(pos)
+                    visibleComponentsAt.pop(pos, None)
     
     for machine in factory.machines.values():
         offscreen = isOffscreen(worldToSreen(machine.position))
@@ -468,6 +498,12 @@ def _findAllOnscreen(factory: fac.Factory):
             # add occupied positions
             occupiedSpaces.update((machine.position[0] + i, machine.position[1] + j) for i in range(2) for j in range(2))
             
+            for x in range(machine.size[0]):
+                for y in range(machine.size[1]):
+                    pos = (machine.position[0] + x, machine.position[1] + y)
+                    occupiedSpaces.add(pos)
+                    visibleComponentsAt[pos] = machine.id
+            
         elif offscreen and machine.id in visibleMachines:
             visibleMachines.remove(machine.id)
             _destroyComponentSprites(machine.id)
@@ -476,6 +512,12 @@ def _findAllOnscreen(factory: fac.Factory):
             for i in range(2):
                 for j in range(2):
                     occupiedSpaces.remove((machine.position[0] + i, machine.position[1] + j))
+            
+            for x in range(machine.size[0]):
+                for y in range(machine.size[1]):
+                    pos = (machine.position[0] + x, machine.position[1] + y)
+                    occupiedSpaces.discard(pos)
+                    visibleComponentsAt.pop(pos, None)
                 
     for inventory in factory.inventories.values():
         offscreen = isOffscreen(worldToSreen(inventory.position))
@@ -485,6 +527,12 @@ def _findAllOnscreen(factory: fac.Factory):
             # add occupied positions
             occupiedSpaces.update((inventory.position[0] + i, inventory.position[1] + j) for i in range(2) for j in range(2))
             
+            for x in range(inventory.size[0]):
+                for y in range(inventory.size[1]):
+                    pos = (inventory.position[0] + x, inventory.position[1] + y)
+                    occupiedSpaces.add(pos)
+                    visibleComponentsAt[pos] = inventory.id
+            
         elif offscreen and inventory.id in visibleInventories:
             visibleInventories.remove(inventory.id)
             _destroyComponentSprites(inventory.id)
@@ -493,9 +541,13 @@ def _findAllOnscreen(factory: fac.Factory):
             for i in range(2):
                 for j in range(2):
                     occupiedSpaces.remove((inventory.position[0] + i, inventory.position[1] + j))
+                    
+            for x in range(inventory.size[0]):
+                for y in range(inventory.size[1]):
+                    pos = (inventory.position[0] + x, inventory.position[1] + y)
+                    occupiedSpaces.discard(pos)
+                    visibleComponentsAt.pop(pos, None)
         
-    #todo make sizes affect occipied spaces
-    
 def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = False):
     """render all factory components onscreen"""
     global cameraPos, lastCameraPos, renderDistance, _transportFrameSync

@@ -250,7 +250,7 @@ class Factory():
             
         length = cumulativeLength + 1
         
-        return length if length > 2 else 2
+        return length if length > 1 else 1
 
     def calculateKeyPointsItemIsBetween(self, transportid: int, itemPos: float) -> tuple[tuple[int, int], tuple[int, int], int]:
         """returns the key points in world pos an item on a given transport would be between"""
@@ -258,6 +258,62 @@ class Factory():
         transport = self.transports[transportid]
         
         cumulativeLength = 0
+        
+        if len(transport.turns) == 1:
+            x, y = transport.turns[0][0]
+            centre = (x, y)
+            distance = itemPos / 2
+
+            if distance < 0:
+                direction = transport.initialDirection
+
+                if direction is Directions.East:
+                    tip = (x - 0.5, y)
+                elif direction is Directions.West:
+                    tip = (x + 0.5, y)
+                elif direction is Directions.North:
+                    tip = (x, y + 0.5)
+                else:
+                    tip = (x, y - 0.5)
+
+                return tip, centre, -0.5
+
+            else:
+                direction = transport.finalDirection
+
+                if direction is Directions.East:
+                    tip = (x + 0.5, y)
+                elif direction is Directions.West:
+                    tip = (x - 0.5, y)
+                elif direction is Directions.North:
+                    tip = (x, y - 0.5)
+                else:
+                    tip = (x, y + 0.5)
+
+                return centre, tip, 0
+        
+        distance = itemPos / 2
+
+        if distance < 0:
+            startPos = transport.turns[0][0]
+            nextPos = transport.turns[1][0]
+
+            outgoingDirection = Factory.directionBetween(startPos, nextPos)
+            incomingDirection = transport.initialDirection
+
+            if incomingDirection is not outgoingDirection:
+                x, y = startPos
+
+                if incomingDirection is Directions.East:
+                    prevPoint = (x - 1, y)
+                elif incomingDirection is Directions.West:
+                    prevPoint = (x + 1, y)
+                elif incomingDirection is Directions.North:
+                    prevPoint = (x, y + 1)
+                else:
+                    prevPoint = (x, y - 1)
+
+                return prevPoint, startPos, -1
         
         for i in range(1, len(transport.turns)):
             prevTurnPos = transport.turns[i - 1][0] if i > 0 else transport.turns[i]
@@ -349,7 +405,51 @@ class Factory():
                 
         self.updateTransport(transportid, length = length)
     
-    #todo add combine conveyor helper
+    def connectTransports(self, id1: int, id2: int, joinPos: tuple[int, int], bent: bool = False, bendDirection: Directions = Directions.North):
+        """combines the end of transport 1 with the start of transport 2"""
+
+        transport1 = self.transports[id1]
+        transport2 = self.transports[id2]
+        
+        # record offset for items and add them to transport 1
+        itemOffset = (transport1.length - 1) * 2
+
+        for item in transport2.items:
+            item[1] += itemOffset
+
+        transport1.items.extend(transport2.items)
+        transport1.itemids.extend(transport2.itemids)
+
+        # remove straight end of transport 1
+        if len(transport1.turns) > 1:
+            pos1 = transport1.turns[-2][0]
+            pos2 = transport1.turns[-1][0]
+
+            incomingDirection = Factory.directionBetween(pos1, pos2)
+
+            if transport1.finalDirection is incomingDirection:
+                del transport1.turns[-1]
+
+        # remove straight start of transport 2
+        if len(transport2.turns) > 1:
+            pos1 = transport2.turns[0][0]
+            pos2 = transport2.turns[1][0]
+
+            outgoingDirection = Factory.directionBetween(pos1, pos2)
+
+            if transport2.initialDirection is outgoingDirection:
+                del transport2.turns[0]
+                
+        if bent:
+            transport1.turns.append([joinPos, bendDirection])
+
+        transport1.turns.extend(transport2.turns)
+
+        transport1.finalDirection = transport2.finalDirection
+        transport1.length = self.calculateTransportLength(id1)
+
+        self.destroyTransport(id2)
+            
     #todo add split conveyor helper
         
     def destroyTransport(self, transportid: int):
@@ -589,3 +689,17 @@ class Factory():
         # todo fix known edgecases
         # conveyor cannot loop into itself
         # large step in dt could overrun producer / furnace timers and stop it from being produced for one time
+    
+    @staticmethod
+    def directionBetween(pos1, pos2):
+        dx = pos2[0] - pos1[0]
+        dy = pos2[1] - pos1[1]
+
+        if dx > 0:
+            return Directions.East
+        elif dx < 0:
+            return Directions.West
+        elif dy > 0:
+            return Directions.South
+        elif dy < 0:
+            return Directions.North

@@ -26,20 +26,15 @@ def main():
     mainFactory.updateMachine(furnace1, position=(5,6), rotation=fac.Directions.North)
     coalT1 = mainFactory.addTransport(fac.conveyor)
     ironT1 = mainFactory.addTransport(fac.conveyor)
-    steelT1 = mainFactory.addTransport(fac.conveyor)
     mainFactory.updateProducer(coal1, outputids=[coalT1])
     mainFactory.updateProducer(iron1, outputids=[ironT1])
-    mainFactory.updateMachine(furnace1, inputids=[coalT1,ironT1], outputid=steelT1, recipe=fac.steelRecipe)
+    mainFactory.updateMachine(furnace1, inputids=[coalT1,ironT1], outputid=None, recipe=fac.steelRecipe)
     mainFactory.addTransportTurn(coalT1, [(3,2), fac.Directions.East])
     mainFactory.addTransportTurn(coalT1, [(5,2), fac.Directions.South])
     mainFactory.addTransportTurn(coalT1, [(5,5), fac.Directions.South])
     mainFactory.addTransportTurn(ironT1, [(9,2), fac.Directions.West])
     mainFactory.addTransportTurn(ironT1, [(6,2), fac.Directions.South])
     mainFactory.addTransportTurn(ironT1, [(6,5), fac.Directions.South])
-    mainFactory.addTransportTurn(steelT1, [(5,8), fac.Directions.South])
-    mainFactory.addTransportTurn(steelT1, [(5,9), fac.Directions.East])
-    mainFactory.addTransportTurn(steelT1, [(8,9), fac.Directions.South])
-    mainFactory.addTransportTurn(steelT1, [(8,10), fac.Directions.East])
 
     #mainFactory.extendTransportTurn(steelT1, 1, True)
     
@@ -74,7 +69,6 @@ def main():
                     flipy = not flipy
                 elif e.key == K_p:
                     bent = not bent
-                    print(bent)
             
             pygameui.Button.handleAllButtons(mouse.get_pos(), e.type)
         
