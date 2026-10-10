@@ -1,7 +1,7 @@
 from pygame import *
 import factory as fac
 from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld
-from encodeFactory import placeComponent
+from encodeFactory import placeComponent, deleteAt
 import pygameui
 
 def drawAll(window, dt):
@@ -18,14 +18,6 @@ def main():
     
     mainFactory = fac.Factory()
     
-    coal1 = mainFactory.addProducer(fac.drill)
-    iron1 = mainFactory.addProducer(fac.drill2)
-    furnace1 = mainFactory.addMachine(fac.furnace)
-    mainFactory.updateProducer(coal1, position=(1,1), rotation=fac.Directions.East, flipped = (True, False))
-    mainFactory.updateProducer(iron1, position=(10,1), rotation=fac.Directions.East)
-    mainFactory.updateMachine(furnace1, position=(5,6), rotation=fac.Directions.North)
-    mainFactory.updateMachine(furnace1, inputids=None, outputid=None, recipe=fac.steelRecipe)
-
     #mainFactory.extendTransportTurn(steelT1, 1, True)
     
     decodeAndRender(mainFactory, forceRender = True)
@@ -51,6 +43,20 @@ def main():
                 if e.key == K_b:
                     placeComponent(mainFactory, fac.conveyor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_v:
+                    placeComponent(mainFactory, fac.furnace, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_c:
+                    placeComponent(mainFactory, fac.drill, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_i:
+                    placeComponent(mainFactory, fac.basicContainer, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_z:
+                    placeComponent(mainFactory, fac.drill2, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_o:
+                    deleteAt(mainFactory, screenToWorld(mouse.get_pos()))
                 elif e.key == K_r:
                     direction = fac.Directions((direction.value + 90) % 360)
                 elif e.key == K_x:

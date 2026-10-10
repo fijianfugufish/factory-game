@@ -141,7 +141,7 @@ drill2 = Producer(
 basicContainer = Inventory(
     type = "BasicContainer",
     maxItems = 10,
-    size = [2, 2]
+    size = (2, 2)
 )
 
 #!    size is currently unused.
@@ -449,8 +449,200 @@ class Factory():
         transport1.length = self.calculateTransportLength(id1)
 
         self.destroyTransport(id2)
-            
-    #todo add split conveyor helper
+                
+    def _transportTiles(self, transport):
+        if not transport.turns:
+            return []
+
+        tiles = [transport.turns[0][0]]
+
+        for i in range(1, len(transport.turns)):
+            x, y = transport.turns[i - 1][0]
+            endX, endY = transport.turns[i][0]
+
+            dx = 0 if endX == x else (1 if endX > x else -1)
+            dy = 0 if endY == y else (1 if endY > y else -1)
+
+            while (x, y) != (endX, endY):
+                x += dx
+                y += dy
+                tiles.append((x, y))
+
+        return tiles
+
+
+    def _setTransportFromTiles(self, transport, tiles, initialDirection, finalDirection):
+        transport.initialDirection = initialDirection
+        transport.finalDirection = finalDirection
+        transport.turns = []
+
+        if len(tiles) == 1:
+            transport.turns = [[tiles[0], finalDirection]]
+            transport.length = 1
+            return
+
+        directions = [
+            Factory.directionBetween(tiles[i], tiles[i + 1])
+            for i in range(len(tiles) - 1)
+        ]
+
+        transport.turns.append([tiles[0], directions[0]])
+
+        for i in range(1, len(tiles) - 1):
+            if directions[i] is not directions[i - 1]:
+                transport.turns.append([tiles[i], directions[i]])
+
+        transport.turns.append([tiles[-1], finalDirection])
+        transport.length = len(tiles)
+
+
+    def disconnectTransport(self, transportid):
+        for producer in self.producers.values():
+            if producer.output:
+                producer.output = [id for id in producer.output if id != transportid]
+
+                if not producer.output:
+                    producer.output = None
+
+        for machine in self.machines.values():
+            if machine.input:
+                machine.input = [id for id in machine.input if id != transportid]
+
+                if not machine.input:
+                    machine.input = None
+
+            if machine.output == transportid:
+                machine.output = None
+
+        for inventory in self.inventories.values():
+            if inventory.input:
+                inventory.input = [id for id in inventory.input if id != transportid]
+
+                if not inventory.input:
+                    inventory.input = None
+
+            if inventory.output:
+                inventory.output = [id for id in inventory.output if id != transportid]
+
+                if not inventory.output:
+                    inventory.output = None
+
+    def splitTransport(self, transportid, deletePos):
+        transport = self.transports[transportid]
+        tiles = self._transportTiles(transport)
+
+        if deletePos not in tiles:
+            return transportid, None, []
+
+        deleteIndex = tiles.index(deletePos)
+
+        beforeTiles = tiles[:deleteIndex]
+        afterTiles = tiles[deleteIndex + 1:]
+
+        oldInitialDirection = transport.initialDirection
+        oldFinalDirection = transport.finalDirection
+
+        # direction pointing into the deleted tile
+        if deleteIndex > 0:
+            beforeFinalDirection = Factory.directionBetween(
+                tiles[deleteIndex - 1],
+                tiles[deleteIndex]
+            )
+        else:
+            beforeFinalDirection = oldInitialDirection
+
+        # direction pointing out of the deleted tile
+        if deleteIndex < len(tiles) - 1:
+            afterInitialDirection = Factory.directionBetween(
+                tiles[deleteIndex],
+                tiles[deleteIndex + 1]
+            )
+        else:
+            afterInitialDirection = oldFinalDirection
+
+        # each conveyor tile is 2 item pos units
+        deletedStart = deleteIndex * 2
+        deletedEnd = deletedStart + 2
+
+        beforeItems = []
+        beforeItemids = []
+
+        afterItems = []
+        afterItemids = []
+
+        destroyedItemids = []
+
+        for item, itemid in zip(transport.items, transport.itemids):
+            itemPos = item[1]
+
+            # before deleted tile
+            if itemPos < deletedStart:
+                beforeItems.append(item)
+                beforeItemids.append(itemid)
+
+            # after deleted tile
+            elif itemPos >= deletedEnd:
+                item[1] -= deletedEnd
+
+                afterItems.append(item)
+                afterItemids.append(itemid)
+
+            # delete items one deleted tiles
+            else:
+                destroyedItemids.append(itemid)
+
+        # save a copy before changing the original
+        oldTransport = deepcopy(transport)
+
+        # remove old component connections
+        self.disconnectTransport(transportid)
+
+        beforeId = None
+        afterId = None
+
+        if beforeTiles:
+            beforeId = transportid
+
+            transport.items = beforeItems
+            transport.itemids = beforeItemids
+
+            self._setTransportFromTiles(
+                transport,
+                beforeTiles,
+                oldInitialDirection,
+                beforeFinalDirection
+            )
+
+        if afterTiles:
+            if beforeTiles:
+                newTransport = deepcopy(oldTransport)
+
+                afterId = self.nextid
+                self.nextid += 1
+
+                newTransport.id = afterId
+                self.transports[afterId] = newTransport
+
+            else:
+                # deleted first tile so reuse original id
+                afterId = transportid
+                newTransport = transport
+
+            newTransport.items = afterItems
+            newTransport.itemids = afterItemids
+
+            self._setTransportFromTiles(
+                newTransport,
+                afterTiles,
+                afterInitialDirection,
+                oldFinalDirection
+            )
+
+        # if only single length conveyor is split
+        if not beforeTiles and not afterTiles:
+            self.destroyTransport(transportid)
+
+        return beforeId, afterId, destroyedItemids
         
     def destroyTransport(self, transportid: int):
         del self.transports[transportid]

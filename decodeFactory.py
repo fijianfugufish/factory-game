@@ -309,13 +309,11 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
                     conveyor = Transport(position[0], position[1], id, turnPos, transport.type, speed = transport.speed, bent = True if numTurns > 1 else False)
                     conveyor.rotation = previousDirection.value
                 
-                # flip if needed
-                # honestly trial and error to figure this out. dont touch.
                 if (previousDirection, turnDir) in leftTurns:
                     if previousDirection in (fac.Directions.North, fac.Directions.South):
-                        conveyor.setFlipped(x=True)
+                        conveyor.setFlipped(x = True)
                     else:
-                        conveyor.setFlipped(y=True)
+                        conveyor.setFlipped(y = True)
                 
                 # add to visible sprite list
                 _addTransportSprite(transport, turnPos, conveyor)
