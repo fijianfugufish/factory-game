@@ -581,13 +581,13 @@ class Factory():
                 beforeItemids.append(itemid)
 
             # after deleted tile
-            elif itemPos >= deletedEnd:
+            elif itemPos > deletedEnd:
                 item[1] -= deletedEnd
 
                 afterItems.append(item)
                 afterItemids.append(itemid)
 
-            # delete items one deleted tiles
+            # delete items on deleted tiles
             else:
                 destroyedItemids.append(itemid)
 
