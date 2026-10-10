@@ -196,6 +196,7 @@ class Factory():
         return producer.id
     
     def updateProducer(self, producerid: int, *,
+                       material: Items = _MISSING,
                        outputids: list[int] = _MISSING,
                        position: tuple[int, int] = _MISSING,
                        rotation: Directions = _MISSING,
@@ -206,6 +207,7 @@ class Factory():
         if position  is not _MISSING: producer.position = position
         if rotation  is not _MISSING: producer.rotation = rotation
         if flipped   is not _MISSING: producer.flipped = flipped
+        if material  is not _MISSING: producer.material = material
     
     def destroyProducer(self, producerid: int):
         del self.producers[producerid]
