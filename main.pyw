@@ -44,16 +44,19 @@ def main():
                     placeComponent(mainFactory, fac.conveyor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_v:
-                    placeComponent(mainFactory, fac.furnace, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    placeComponent(mainFactory, fac.furnace, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_c:
-                    placeComponent(mainFactory, fac.drill, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    placeComponent(mainFactory, fac.drill, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_i:
-                    placeComponent(mainFactory, fac.basicContainer, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    placeComponent(mainFactory, fac.basicContainer, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_z:
-                    placeComponent(mainFactory, fac.drill2, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    placeComponent(mainFactory, fac.drill2, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_t:
+                    placeComponent(mainFactory, fac.basicCombiner, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_o:
                     deleteAt(mainFactory, screenToWorld(mouse.get_pos()))

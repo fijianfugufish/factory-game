@@ -87,7 +87,7 @@ class Inventory():
 class Producer():
     type: str
     material: Items
-    speed: int
+    speed: float
     efficiency: int
     maxItems: int
     size: tuple[int, int]
@@ -102,7 +102,28 @@ class Producer():
     def totalItems(self) -> int:
         return sum(self.inventory.values())
 
-#todo add routers
+@dataclass
+class Router():
+    type: str
+    speed: float
+    maxItems: int
+    size: tuple[int, int]
+    position: tuple[int, int] = (0, 0)
+    rotation: Directions = Directions.North
+    flipped: tuple[bool, bool] = (False, False)  # (flipped x, flipped y)
+    inventory: dict[Items, int] = field(default_factory = dict)
+    condition: callable = lambda: ...
+    input: list[int] | None = None
+    output: list[int] | None = None
+    outputPos: list[int] | None = None # output pos in item units
+    outputting: int = 0  # index of current output
+    inputting: int = 0   # index of current input
+    progress: float = 0
+    ready: bool = False
+    id: int = 0
+    
+    def totalItems(self) -> int:
+        return sum(self.inventory.values())
 
 conveyor = Transport(
     type = "StandardConveyorBelt",
@@ -144,6 +165,13 @@ basicContainer = Inventory(
     size = (2, 2)
 )
 
+basicCombiner = Router(
+    type = "Combiner",
+    maxItems = 2,
+    speed = 0.5,
+    size = (1, 1),
+)
+
 #!    size is currently unused.
 #todo make it matter when instantiating sprites
 
@@ -153,6 +181,7 @@ class Factory():
         self.machines: dict[int, Machine] = {}
         self.transports: dict[int, Transport] = {}
         self.inventories: dict[int, Inventory] = {}
+        self.routers: dict[int, Router] = {}
         
         self.nextid = 1
     
@@ -673,6 +702,32 @@ class Factory():
     def destroyInventory(self, inventoryid: int):
         del self.inventories[inventoryid]
     
+    def addRouter(self, routerTemplate: Router) -> int:
+        router = deepcopy(routerTemplate)
+        
+        router.id = self.nextid
+        self.routers[router.id] = router
+        
+        self.nextid += 1
+        
+        return router.id
+    
+    def updateRouter(self, routerid: int, *,
+                        inputids: list[int] = _MISSING, outputids: list[int] = _MISSING,
+                        position: tuple[int, int] = _MISSING,
+                        rotation: Directions = _MISSING,
+                        flipped: tuple[bool, bool] = _MISSING):
+        router = self.routers[routerid]
+        
+        if inputids  is not _MISSING: router.input = inputids
+        if outputids is not _MISSING: router.output = outputids
+        if position  is not _MISSING: router.position = position
+        if rotation  is not _MISSING: router.rotation = rotation
+        if flipped   is not _MISSING: router.flipped = flipped
+    
+    def destroyRouter(self, routerid: int):
+        del self.routers[routerid]
+    
     def _stepProducers(self, dt):
         for id, producer in self.producers.items():
             if producer.material is None: continue
@@ -741,6 +796,26 @@ class Factory():
                     item[1] = farthest
                     
                 farthest = item[1] - 1
+    
+    def _stepRouters(self, dt):
+        for id, router in self.routers.items():
+            router.progress += dt
+            
+            if router.progress < router.speed:
+                router.ready = False
+                continue
+            
+            # set ready flag
+            router.ready = True
+            
+            #todo if router is conditional make the condition affect output 
+            if router.output:
+                router.outputting = (router.outputting + 1) % len(router.output)
+            
+            if router.input:
+                router.inputting = (router.inputting + 1) % len(router.input)
+            
+            router.progress = 0
             
     def _stepConnections(self):
         """resolve in/outputs"""
@@ -865,10 +940,60 @@ class Factory():
                         del transport.items[0] 
                         del transport.itemids[0] 
                 
-                        # add item into the machine
+                        # add item into the inventory
                         inventory.inventory[itemToTransport] = inventory.inventory.get(itemToTransport, 0) + 1
                         
                         #print(f"{itemToTransport.name} stored")
+
+        # resolve router i/o
+        for id, router in self.routers.items():
+            if not router.ready: continue
+            
+            if router.output and router.inventory:
+                output = router.output[router.outputting]
+                
+                if output in self.transports:
+                    # check for space on the transport
+                    transport = self.transports[output]
+                    if transport.items:
+                        if transport.items[-1][1] < 1: continue
+                    
+                    # remove item from router
+                    itemToTransfer = next(iter(router.inventory), None)
+                    router.inventory[itemToTransfer] -= 1
+                    
+                    if router.inventory[itemToTransfer] <= 0:
+                        del router.inventory[itemToTransfer]
+                    
+                    # transfer to transport at position 0
+                    transport.items.append([itemToTransfer, 0])
+                    # id item
+                    transport.itemids.append(self.nextid)
+                    self.nextid += 1
+            
+            if router.input:
+                input = router.input[router.inputting]
+                
+                if input in self.transports:
+                    # check for item at end of transport
+                    transport = self.transports[input]
+                    if transport.items:
+                        if transport.items[0][1] / 2 < transport.length: continue
+                    else: continue
+                    
+                    # check for space in the router
+                    if router.totalItems() >= router.maxItems: continue
+                    
+                    itemToTransport = transport.items[0][0]
+                    
+                    transport.lastDestroyedid = transport.itemids[0] # flag to the renderer to destroy the visual rep
+                    
+                    # remove last item from transport
+                    del transport.items[0] 
+                    del transport.itemids[0] 
+            
+                    # add item into the router
+                    router.inventory[itemToTransport] = router.inventory.get(itemToTransport, 0) + 1
                         
     def step(self, dt: float):
         """main factory update function"""
@@ -876,6 +1001,7 @@ class Factory():
         self._stepProducers(dt)
         self._stepMachines(dt)
         self._stepTransports(dt)
+        self._stepRouters(dt)
         self._stepConnections()
         
         # todo fix known edgecases

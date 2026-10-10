@@ -23,6 +23,7 @@ visibleTransports: set[int] = set()
 visibleMachines: set[int] = set()
 visibleProducers: set[int] = set()
 visibleInventories: set[int] = set()
+visibleRouters: set[int] = set()
 visibleItems: dict[int, "Item"] = {}
 visibleSprites: list[pygameui.Sprite] = []
 # the seemingly complex keys ensure that every tranport and id sprite pairs are able to be referenced uniquely
@@ -115,6 +116,21 @@ class Inventory(pygameui.Sprite):
                 self.changeImage(_BasicContainerSprite)
             case _:
                 raise ValueError(f"unknown inventory type {type!r}")
+            
+        self.id = id
+        self.z = 1
+        
+        self.worldPos = worldPos
+
+class Router(pygameui.Sprite):
+    def __init__(self, x, y, id, worldPos, type, **kwargs):
+        super().__init__(x, y, w = 1 * 64, h = 1 * 64, **kwargs)
+        
+        match type:
+            case "Combiner":
+                ... # no assets
+            case _:
+                raise ValueError(f"unknown router type {type!r}")
             
         self.id = id
         self.z = 1
@@ -389,6 +405,19 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             box.setFlipped(*inventory.flipped)
             _addComponentSprite(id, box)
     
+    # decode for routers
+    elif id in factory.routers:
+        router = factory.routers[id]
+        pos = router.position
+        
+        screenPos = worldToSreen(pos)
+        
+        if not isOffscreen(screenPos):
+            split = Router(screenPos[0], screenPos[1], id, pos, router.type)
+            split.rotation = router.rotation.value
+            split.setFlipped(*router.flipped)
+            _addComponentSprite(id, split)
+    
 def _renderVisibleItems(factory: fac.Factory):
     global nextVisibleItemid
     
@@ -542,7 +571,36 @@ def _findAllOnscreen(factory: fac.Factory):
                 for y in range(height):
                     pos = (inventory.position[0] + x, inventory.position[1] + y)
                     occupiedSpaces.discard(pos)
-                    visibleComponentsAt.pop(pos, None)       
+                    visibleComponentsAt.pop(pos, None)   
+
+    for router in factory.routers.values():
+        offscreen = isOffscreen(worldToSreen(router.position))
+
+        width, height = router.size
+
+        if router.rotation in (fac.Directions.East, fac.Directions.West):
+            width, height = height, width
+
+        if not offscreen and router.id not in visibleRouters:
+            visibleRouters.add(router.id)
+
+            # add occupied positions
+            for x in range(width):
+                for y in range(height):
+                    pos = (router.position[0] + x, router.position[1] + y)
+                    occupiedSpaces.add(pos)
+                    visibleComponentsAt[pos] = router.id
+
+        elif offscreen and router.id in visibleRouters:
+            visibleRouters.remove(router.id)
+            _destroyComponentSprites(router.id)
+
+            # remove occupied positions
+            for x in range(width):
+                for y in range(height):
+                    pos = (router.position[0] + x, router.position[1] + y)
+                    occupiedSpaces.discard(pos)
+                    visibleComponentsAt.pop(pos, None)      
                      
 def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = False):
     """render all factory components onscreen"""
@@ -564,6 +622,10 @@ def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = F
         for inventoryid in visibleInventories:
             if inventoryid not in componentSprites:
                 _decodeFactoryComponent(factory, inventoryid)
+        
+        for routerid in visibleRouters:
+                if routerid not in componentSprites:
+                    _decodeFactoryComponent(factory, routerid)
         
         lastCameraPos = copy(cameraPos)
     
