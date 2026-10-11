@@ -41,10 +41,10 @@ def main():
             
             if e.type == KEYDOWN:
                 if e.key == K_b:
-                    placeComponent(mainFactory, fac.conveyor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
+                    placeComponent(mainFactory, fac.basicConveyor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy), bent = bent)
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_v:
-                    placeComponent(mainFactory, fac.furnace, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
+                    placeComponent(mainFactory, fac.basicFurnace, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_c:
                     placeComponent(mainFactory, fac.drill, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
@@ -56,7 +56,7 @@ def main():
                     placeComponent(mainFactory, fac.drill2, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_t:
-                    placeComponent(mainFactory, fac.basicCombiner, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
+                    placeComponent(mainFactory, fac.fourWayDistributor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_o:
                     deleteAt(mainFactory, screenToWorld(mouse.get_pos()))

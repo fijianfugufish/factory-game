@@ -125,16 +125,16 @@ class Router():
     def totalItems(self) -> int:
         return sum(self.inventory.values())
 
-conveyor = Transport(
-    type = "StandardConveyorBelt",
+basicConveyor = Transport(
+    type = "BasicConveyor",
     speed = 2,
     length = 10,
     # input = None,
     # output = None,
 )
 
-furnace = Machine(
-    type = "Furnace",
+basicFurnace = Machine(
+    type = "BasicFurnace",
     recipes = [steelRecipe],
     progress = 0,
     maxItems = 5,
@@ -142,7 +142,7 @@ furnace = Machine(
 )
 
 drill = Producer(
-    type = "Drill",
+    type = "BasicDrill",
     material = Items.Coal,
     speed = 1,
     efficiency = 1,
@@ -151,7 +151,7 @@ drill = Producer(
 )
 
 drill2 = Producer(
-    type = "Drill",
+    type = "BasicDrill",
     material = Items.IronOre,
     speed = 4,
     efficiency = 5,
@@ -165,10 +165,10 @@ basicContainer = Inventory(
     size = (2, 2)
 )
 
-basicCombiner = Router(
-    type = "Combiner",
+fourWayDistributor = Router(
+    type = "FourWayDistributor",
     maxItems = 2,
-    speed = 0.5,
+    speed = 0.3,
     size = (1, 1),
 )
 
@@ -557,6 +557,25 @@ class Factory():
 
                 if not inventory.output:
                     inventory.output = None
+        
+        for router in self.routers.values():
+            if router.input:
+                router.input = [id for id in router.input if id != transportid]
+
+                if not router.input:
+                    router.input = None
+                    router.inputting = 0
+                else:
+                    router.inputting %= len(router.input)
+
+            if router.output:
+                router.output = [id for id in router.output if id != transportid]
+
+                if not router.output:
+                    router.output = None
+                    router.outputting = 0
+                else:
+                    router.outputting %= len(router.output)
 
     def splitTransport(self, transportid, deletePos):
         transport = self.transports[transportid]
@@ -676,6 +695,7 @@ class Factory():
         return beforeId, afterId, destroyedItemids
         
     def destroyTransport(self, transportid: int):
+        self.disconnectTransport(transportid)
         del self.transports[transportid]
     
     def addInventory(self, inventoryTemplate: Inventory) -> int:
@@ -800,23 +820,14 @@ class Factory():
                 farthest = item[1] - 1
     
     def _stepRouters(self, dt):
-        for id, router in self.routers.items():
+        for router in self.routers.values():
             router.progress += dt
-            
+
             if router.progress < router.speed:
                 router.ready = False
                 continue
-            
-            # set ready flag
+
             router.ready = True
-            
-            #todo if router is conditional make the condition affect output 
-            if router.output:
-                router.outputting = (router.outputting + 1) % len(router.output)
-            
-            if router.input:
-                router.inputting = (router.inputting + 1) % len(router.input)
-            
             router.progress = 0
             
     def _stepConnections(self):
@@ -952,26 +963,33 @@ class Factory():
             if not router.ready: continue
             
             if router.output and router.inventory:
-                output = router.output[router.outputting]
-                
-                if output in self.transports:
-                    # check for space on the transport
+                for offset in range(len(router.output)):
+                    index = (router.outputting + offset) % len(router.output)
+                    output = router.output[index]
+
+                    if output not in self.transports:
+                        continue
+
                     transport = self.transports[output]
-                    if transport.items:
-                        if transport.items[-1][1] < 1: continue
-                    
-                    # remove item from router
+
+                    # try next output if blocked
+                    if transport.items and transport.items[-1][1] < 1:
+                        continue
+
                     itemToTransfer = next(iter(router.inventory), None)
                     router.inventory[itemToTransfer] -= 1
-                    
+
                     if router.inventory[itemToTransfer] <= 0:
                         del router.inventory[itemToTransfer]
-                    
-                    # transfer to transport at position 0
+
                     transport.items.append([itemToTransfer, 0])
-                    # id item
                     transport.itemids.append(self.nextid)
                     self.nextid += 1
+
+                    # start from the non blocked output
+                    router.outputting = (index + 1) % len(router.output)
+
+                    break
             
             if router.input:
                 input = router.input[router.inputting]
@@ -996,6 +1014,8 @@ class Factory():
             
                     # add item into the router
                     router.inventory[itemToTransport] = router.inventory.get(itemToTransport, 0) + 1
+                    
+                    router.inputting = (router.inputting + 1) % len(router.input)
                         
     def step(self, dt: float):
         """main factory update function"""

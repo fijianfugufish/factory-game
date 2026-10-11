@@ -270,20 +270,6 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
     
     _checkTransportConnections(factory, resultTransportId)
 
-def _rotateMatrix(matrix, rotations):
-    rotations %= 4
-
-    for _ in range(rotations):
-        matrix = [list(row) for row in zip(*matrix[::-1])]
-
-    return matrix
-
-def _flipMatrixX(matrix):
-    return [row[::-1] for row in matrix]
-
-def _flipMatrixY(matrix):
-    return matrix[::-1]
-
 def _connectComponent(factory: fac.Factory, component: any, componentid: int, transportid: int, isInput: bool):
     if componentid in factory.machines:
         if isInput:
@@ -413,11 +399,12 @@ def _checkAndConnectComponent(factory: fac.Factory, componentid: int, transporti
 
     elif isinstance(component, fac.Router):
         if component.size == (1, 1):
-            if component.type == "Combiner":
+            if component.type == "FourWayDistributor":
                 componentPorts = [
-                    (0, 0, fac.Directions.West, 1),
-                    (0, 0, fac.Directions.North, 1),
-                    (0, 0, fac.Directions.East, -1),
+                    (0, 0, fac.Directions.West, 2),
+                    (0, 0, fac.Directions.North, 2),
+                    (0, 0, fac.Directions.East, 2),
+                    (0, 0, fac.Directions.South, 2),
                 ]
 
     if componentPorts is None:

@@ -33,30 +33,39 @@ occupiedSpaces: set[tuple[int, int]] = set()
 visibleTransportsAt: dict[tuple[int, int], int] = {}
 visibleComponentsAt: dict[tuple[int, int], int] = {}
 
-_DrillFrames = [image.load(f"Images/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
+#* producers
+_BasicDrillFrames = [image.load(f"Images/Producer/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
 
-_FurnaceFrames = [image.load(f"Images/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
+#* machines
+_BasicFurnaceFrames = [image.load(f"Images/Machine/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
 
-_BasicContainerSprite = image.load("Images/Container/BasicContainer.png").convert_alpha()
+#* inventories
+_BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
 
-_ConveyorStraightFrames = [image.load(f"Images/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
-_ConveyorTurnFrames =     [image.load(f"Images/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
+#* transports
+_BasicConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
+_BasicConveyorTurnFrames =     [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
-_CoalSprite = image.load("Images/Ore/Coal.png").convert_alpha()
-_IronOreSprite = image.load("Images/Ore/IronOre.png").convert_alpha()
+#* routers
+_FourWayDistributor =  image.load(f"Images/Router/FourWayDistributor.png").convert()
+_TwoWayDistributor  =  image.load(f"Images/Router/TwoWayDistributor.png").convert()
 
-_SteelIngotSprite = image.load("Images/Ingot/SteelIngot.png").convert_alpha()
+#* items
+_CoalSprite = image.load("Images/Item/Ore/Coal.png").convert_alpha()
+_IronOreSprite = image.load("Images/Item/Ore/IronOre.png").convert_alpha()
+
+_SteelIngotSprite = image.load("Images/Item/Ingot/SteelIngot.png").convert_alpha()
 
 class Producer(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
         match type:
-            case "Drill":
-                self._image = _DrillFrames[0]
-                self._OriginalImage = _DrillFrames[0]
+            case "BasicDrill":
+                self._image = _BasicDrillFrames[0]
+                self._OriginalImage = _BasicDrillFrames[0]
                 
-                self.addAnimation("drill", *_DrillFrames)
+                self.addAnimation("drill", *_BasicDrillFrames)
                 self.startAnimation("drill", 8)
             case _:
                 raise ValueError("unknown producer type")
@@ -71,13 +80,13 @@ class Transport(pygameui.AnimatableSprite):
         super().__init__(x, y, w = 1 * 64, h = 1 * 64, autoAnimate = False, **kwargs)
         
         match type:
-            case "StandardConveyorBelt":
+            case "BasicConveyor":
                 if bent:
-                    self.changeImage(_ConveyorTurnFrames[0])
-                    self.addAnimation("move", *_ConveyorTurnFrames)
+                    self.changeImage(_BasicConveyorTurnFrames[0])
+                    self.addAnimation("move", *_BasicConveyorTurnFrames)
                 else:
-                    self.changeImage(_ConveyorStraightFrames[0])
-                    self.addAnimation("move", *_ConveyorStraightFrames)
+                    self.changeImage(_BasicConveyorStraightFrames[0])
+                    self.addAnimation("move", *_BasicConveyorStraightFrames)
                     
                 self.currentAnimation = "move"
             case _:
@@ -95,9 +104,9 @@ class Machine(pygameui.AnimatableSprite):
         super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
         
         match type:
-            case "Furnace":
-                self.changeImage(_FurnaceFrames[0])
-                self.addAnimation("cook", *_FurnaceFrames)
+            case "BasicFurnace":
+                self.changeImage(_BasicFurnaceFrames[0])
+                self.addAnimation("cook", *_BasicFurnaceFrames)
                 self.startAnimation("cook", 10)
             case _:
                 raise ValueError(f"unknown machine type {type!r}")
@@ -127,8 +136,10 @@ class Router(pygameui.Sprite):
         super().__init__(x, y, w = 1 * 64, h = 1 * 64, **kwargs)
         
         match type:
-            case "Combiner":
-                ... # no assets
+            case "FourWayDistributor":
+                self.changeImage(_FourWayDistributor)
+            case "TwoWayDistributor":
+                self.changeImage(_TwoWayDistributor)
             case _:
                 raise ValueError(f"unknown router type {type!r}")
             
