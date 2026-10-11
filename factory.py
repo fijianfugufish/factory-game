@@ -125,6 +125,8 @@ class Router():
     def totalItems(self) -> int:
         return sum(self.inventory.values())
 
+#*transports
+
 basicConveyor = Transport(
     type = "BasicConveyor",
     speed = 2,
@@ -133,6 +135,8 @@ basicConveyor = Transport(
     # output = None,
 )
 
+#* machines
+
 basicFurnace = Machine(
     type = "BasicFurnace",
     recipes = [steelRecipe],
@@ -140,6 +144,8 @@ basicFurnace = Machine(
     maxItems = 5,
     size = (2, 2)
 )
+
+#* producers
 
 drill = Producer(
     type = "BasicDrill",
@@ -159,17 +165,28 @@ drill2 = Producer(
     size = (2, 2)
 )
 
+#* inventories
+
 basicContainer = Inventory(
     type = "BasicContainer",
     maxItems = 10,
     size = (2, 2)
 )
 
+#* routers
+
 fourWayDistributor = Router(
     type = "FourWayDistributor",
     maxItems = 2,
     speed = 0.3,
     size = (1, 1),
+)
+
+twoWayDistributor = Router(
+    type = "TwoWayDistributor",
+    maxItems = 2,
+    speed = 0.3,
+    size = (2, 1),
 )
 
 #!    size is currently unused.

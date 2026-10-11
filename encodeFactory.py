@@ -406,6 +406,13 @@ def _checkAndConnectComponent(factory: fac.Factory, componentid: int, transporti
                     (0, 0, fac.Directions.East, 2),
                     (0, 0, fac.Directions.South, 2),
                 ]
+        elif component.size == (2, 1):
+            if component.type == "TwoWayDistributor":
+                componentPorts = [
+                    (0, 0, fac.Directions.North, 2),
+                    (0, 0, fac.Directions.South, 2),
+                    (1, 0, fac.Directions.South, 2),
+                ]
 
     if componentPorts is None:
         raise BaseException("component ports is lowk none")

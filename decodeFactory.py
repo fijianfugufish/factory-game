@@ -47,8 +47,8 @@ _BasicConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/Conve
 _BasicConveyorTurnFrames =     [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
 #* routers
-_FourWayDistributor =  image.load(f"Images/Router/FourWayDistributor.png").convert()
-_TwoWayDistributor  =  image.load(f"Images/Router/TwoWayDistributor.png").convert()
+_FourWayDistributor =  image.load(f"Images/Router/FourWayDistributor.png").convert_alpha()
+_TwoWayDistributor  =  image.load(f"Images/Router/TwoWayDistributor.png").convert_alpha()
 
 #* items
 _CoalSprite = image.load("Images/Item/Ore/Coal.png").convert_alpha()
@@ -140,6 +140,8 @@ class Router(pygameui.Sprite):
                 self.changeImage(_FourWayDistributor)
             case "TwoWayDistributor":
                 self.changeImage(_TwoWayDistributor)
+                self.w = 2 * 64
+                self.h = 1 * 64
             case _:
                 raise ValueError(f"unknown router type {type!r}")
             

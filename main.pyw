@@ -58,6 +58,9 @@ def main():
                 elif e.key == K_t:
                     placeComponent(mainFactory, fac.fourWayDistributor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_u:
+                    placeComponent(mainFactory, fac.twoWayDistributor, screenToWorld(mouse.get_pos()), direction, (flipx, flipy))
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_o:
                     deleteAt(mainFactory, screenToWorld(mouse.get_pos()))
                 elif e.key == K_r:
