@@ -433,6 +433,10 @@ class Factory():
         
         transport = self.transports[transportid]
         
+        if not isEnd:
+            for item in transport.items:
+                item[1] += amount * 2
+        
         turnToExtend = transport.turns[-1] if isEnd else transport.turns[0]
         turnDirection = transport.finalDirection if isEnd else transport.initialDirection
         
