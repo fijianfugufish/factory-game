@@ -460,13 +460,19 @@ class Factory():
         transport2 = self.transports[id2]
         
         # record offset for items and add them to transport 1
-        itemOffset = (transport1.length - 1) * 2
+        itemOffset = (transport1.length + 1) * 2
 
         for item in transport2.items:
             item[1] += itemOffset
 
         transport1.items.extend(transport2.items)
         transport1.itemids.extend(transport2.itemids)
+
+        combined = list(zip(transport1.items, transport1.itemids))
+        combined.sort(key=lambda pair: pair[0][1], reverse=True)
+
+        transport1.items = [item for item, itemid in combined]
+        transport1.itemids = [itemid for item, itemid in combined]
 
         # remove straight end of transport 1
         if len(transport1.turns) > 1:
@@ -1003,36 +1009,45 @@ class Factory():
                     transport.itemids.append(self.nextid)
                     self.nextid += 1
 
-                    # start from the non blocked output
                     router.outputting = (index + 1) % len(router.output)
 
                     break
             
-            if router.input:
-                input = router.input[router.inputting]
-                
-                if input in self.transports:
-                    # check for item at end of transport
-                    transport = self.transports[input]
-                    if transport.items:
-                        if transport.items[0][1] / 2 < transport.length: continue
-                    else: continue
-                    
-                    # check for space in the router
-                    if router.totalItems() >= router.maxItems: continue
-                    
+            if router.input and router.totalItems() < router.maxItems:
+                for offset in range(len(router.input)):
+                    index = (router.inputting + offset) % len(router.input)
+                    inputid = router.input[index]
+
+                    if inputid not in self.transports:
+                        continue
+
+                    transport = self.transports[inputid]
+
+                    # try next input if theres nothing
+                    if not transport.items:
+                        continue
+
+                    # item isnt at the end so try next
+                    if transport.items[0][1] / 2 < transport.length:
+                        continue
+
                     itemToTransport = transport.items[0][0]
-                    
-                    transport.lastDestroyedid = transport.itemids[0] # flag to the renderer to destroy the visual rep
-                    
-                    # remove last item from transport
-                    del transport.items[0] 
-                    del transport.itemids[0] 
-            
-                    # add item into the router
-                    router.inventory[itemToTransport] = router.inventory.get(itemToTransport, 0) + 1
-                    
-                    router.inputting = (router.inputting + 1) % len(router.input)
+
+                    transport.lastDestroyedid = transport.itemids[0]
+
+                    del transport.items[0]
+                    del transport.itemids[0]
+
+                    router.inventory[itemToTransport] = (
+                        router.inventory.get(itemToTransport, 0) + 1
+                    )
+
+                    router.inputting = (index + 1) % len(router.input)
+
+                    break
+        
+        #todo some routers should be conditional. make conditions work
+        #todo also some routers may need to only pass certain inputs to certain outputs
                         
     def step(self, dt: float):
         """main factory update function"""
