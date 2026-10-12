@@ -13,9 +13,18 @@ class Directions(Enum):
 class Items(Enum):
     Wood = 1
     IronOre = 2
-    Coal = 3
-    SteelIngot = 4
-    # etc...
+    CopperOre = 3
+    TitaniumOre = 4
+    Coal = 5
+    SteelIngot = 6
+    IronIngot = 7
+    CopperIngot = 8
+    TitaniumIngot = 9
+    IronPlate = 10
+    SteelPlate = 11
+    TitaniumPlate = 12
+    IronBar = 13
+    IronGear = 14
 
 @dataclass
 class Recipe():
@@ -23,13 +32,43 @@ class Recipe():
     result: list[Items | int]
     time: float
 
-steelRecipe = Recipe(
+#* recipes
+
+#* ingot recipes
+
+steelIngotRecipe = Recipe(
     ingredients = {
         Items.IronOre: 3,
-        Items.Coal: 1
+        Items.Coal: 1,
         },
     result = [Items.SteelIngot, 1],
+    time = 4,
+)
+
+ironIngotRecipe = Recipe(
+    ingredients = {
+        Items.IronOre: 1,
+        },
+    result = [Items.IronIngot, 1],
     time = 2,
+)
+
+#* plate recipes
+
+ironPlateRecipe = Recipe(
+    ingredients = {
+        Items.IronIngot: 2,
+        },
+    result = [Items.IronPlate, 1],
+    time = 1,
+)
+
+steelPlateRecipe = Recipe(
+    ingredients = {
+        Items.SteelIngot: 2,
+        },
+    result = [Items.SteelPlate, 1],
+    time = 1,
 )
 
 @dataclass
@@ -139,10 +178,26 @@ basicConveyor = Transport(
 
 basicFurnace = Machine(
     type = "BasicFurnace",
-    recipes = [steelRecipe],
+    recipes = [steelIngotRecipe, ironIngotRecipe],
     progress = 0,
     maxItems = 5,
     size = (2, 2)
+)
+
+basicPress = Machine(
+    type = "BasicPress",
+    recipes = [ironPlateRecipe, steelPlateRecipe],
+    progress = 0,
+    maxItems = 5,
+    size = (2, 2)
+)
+
+basicAssembler = Machine(
+    type = "BasicAssembler",
+    recipes = [ironIngotRecipe],
+    progress = 0,
+    maxItems = 5,
+    size = (3, 2)
 )
 
 #* producers

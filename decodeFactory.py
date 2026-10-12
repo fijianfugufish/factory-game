@@ -39,22 +39,39 @@ _BasicDrillFrames = [image.load(f"Images/Producer/Drill/Drill{i}.png").convert_a
 #* machines
 _BasicFurnaceFrames = [image.load(f"Images/Machine/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
 
+_BasicPressFrames = [image.load(f"Images/Machine/Press/Press{i}.png").convert_alpha() for i in range(1, 12)]
+
+_BasicAssemblerFrames = [image.load(f"Images/Machine/Assembler/Assembler{i}.png").convert_alpha() for i in range(1, 33)]
+
 #* inventories
 _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
 
 #* transports
 _BasicConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
-_BasicConveyorTurnFrames =     [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
+_BasicConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
 #* routers
-_FourWayDistributor =  image.load(f"Images/Router/FourWayDistributor.png").convert_alpha()
-_TwoWayDistributor  =  image.load(f"Images/Router/TwoWayDistributor.png").convert_alpha()
+_FourWayDistributor = image.load(f"Images/Router/FourWayDistributor.png").convert_alpha()
+_TwoWayDistributor  = image.load(f"Images/Router/TwoWayDistributor.png").convert_alpha()
 
 #* items
-_CoalSprite = image.load("Images/Item/Ore/Coal.png").convert_alpha()
+_CoalSprite    = image.load("Images/Item/Ore/Coal.png").convert_alpha()
 _IronOreSprite = image.load("Images/Item/Ore/IronOre.png").convert_alpha()
+_CopperOreSprite = image.load("Images/Item/Ore/CopperOre.png").convert_alpha()
+_TitaniumOreSprite = image.load("Images/Item/Ore/TitaniumOre.png").convert_alpha()
 
 _SteelIngotSprite = image.load("Images/Item/Ingot/SteelIngot.png").convert_alpha()
+_IronIngotSprite = image.load("Images/Item/Ingot/IronIngot.png").convert_alpha()
+_CopperIngotSprite = image.load("Images/Item/Ingot/CopperIngot.png").convert_alpha()
+_TitaniumIngotSprite = image.load("Images/Item/Ingot/TitaniumIngot.png").convert_alpha()
+
+_SteelPlateSprite = image.load("Images/Item/Plate/SteelPlate.png").convert_alpha()
+_IronPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
+_TitaniumPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
+
+_IronBarSprite = image.load("Images/Item/Bar/IronBar.png").convert_alpha()
+
+_IronGearSprite = image.load("Images/Item/Gear/IronGear.png").convert_alpha()
 
 class Producer(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
@@ -108,6 +125,16 @@ class Machine(pygameui.AnimatableSprite):
                 self.changeImage(_BasicFurnaceFrames[0])
                 self.addAnimation("cook", *_BasicFurnaceFrames)
                 self.startAnimation("cook", 10)
+            case "BasicPress":
+                self.changeImage(_BasicPressFrames[0])
+                self.addAnimation("squish", *_BasicPressFrames)
+                self.startAnimation("squish", 10)
+            case "BasicAssembler":
+                self.w = 3 * 64
+                self.h = 2 * 64
+                self.changeImage(_BasicAssemblerFrames[0])
+                self.addAnimation("assemble", *_BasicAssemblerFrames)
+                self.startAnimation("assemble", 10)
             case _:
                 raise ValueError(f"unknown machine type {type!r}")
             
@@ -139,9 +166,9 @@ class Router(pygameui.Sprite):
             case "FourWayDistributor":
                 self.changeImage(_FourWayDistributor)
             case "TwoWayDistributor":
-                self.changeImage(_TwoWayDistributor)
                 self.w = 2 * 64
                 self.h = 1 * 64
+                self.changeImage(_TwoWayDistributor)
             case _:
                 raise ValueError(f"unknown router type {type!r}")
             
@@ -159,8 +186,33 @@ class Item(pygameui.Sprite):
                 self.changeImage(_CoalSprite)
             case fac.Items.IronOre:
                 self.changeImage(_IronOreSprite)
+            case fac.Items.CopperOre:
+                self.changeImage(_CopperOreSprite)
+            case fac.Items.TitaniumOre:
+                self.changeImage(_TitaniumOreSprite)
+                
             case fac.Items.SteelIngot:
                 self.changeImage(_SteelIngotSprite)
+            case fac.Items.IronIngot:
+                self.changeImage(_IronIngotSprite)
+            case fac.Items.CopperIngot:
+                self.changeImage(_CopperIngotSprite)
+            case fac.Items.TitaniumIngot:
+                self.changeImage(_TitaniumIngotSprite)
+                
+            case fac.Items.SteelPlate:
+                self.changeImage(_SteelPlateSprite)
+            case fac.Items.IronPlate:
+                self.changeImage(_IronPlateSprite)
+            case fac.Items.TitaniumPlate:
+                self.changeImage(_TitaniumPlateSprite)
+                
+            case fac.Items.IronBar:
+                self.changeImage(_IronBarSprite)
+                
+            case fac.Items.IronGear:
+                self.changeImage(_IronGearSprite)
+                
             case _:
                 raise ValueError(f"unknown item type {item.name!r}")
         
@@ -391,6 +443,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             drill.rotation = producer.rotation.value
             drill.setFlipped(*producer.flipped)
             _addComponentSprite(id, drill)
+
+            # flip w and h because rotation is stupid
+            if (drill.rotation + 90) % 180 == 0:
+                drill.w, drill.h = drill.h, drill.w
     
     # decode for machines
     elif id in factory.machines:
@@ -404,6 +460,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             furnace.rotation = machine.rotation.value
             furnace.setFlipped(*machine.flipped)
             _addComponentSprite(id, furnace)
+            
+            # flip w and h because rotation is stupid
+            if (furnace.rotation + 90) % 180 == 0:
+                furnace.w, furnace.h = furnace.h, furnace.w
     
     # decode for inventories
     elif id in factory.inventories:
@@ -418,6 +478,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             box.setFlipped(*inventory.flipped)
             _addComponentSprite(id, box)
     
+            # flip w and h because rotation is stupid
+            if (box.rotation + 90) % 180 == 0:
+                box.w, box.h = box.h, box.w
+    
     # decode for routers
     elif id in factory.routers:
         router = factory.routers[id]
@@ -430,6 +494,10 @@ def _decodeFactoryComponent(factory: fac.Factory, id: int):
             split.rotation = router.rotation.value
             split.setFlipped(*router.flipped)
             _addComponentSprite(id, split)
+            
+            # flip w and h because rotation is stupid
+            if (split.rotation + 90) % 180 == 0:
+                split.w, split.h = split.h, split.w
     
 def _renderVisibleItems(factory: fac.Factory):
     global nextVisibleItemid
