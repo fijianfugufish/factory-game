@@ -79,8 +79,8 @@ def _screenToPixel(px):
 class BuildMenu():
     @classmethod
     def init(cls):
-        menux, menuy = 0, winy - _pixelToScreen(128 + 16)
-        menuw, menuh = _pixelToScreen(80), _pixelToScreen(128)
+        menux, menuy = 0, winy - _pixelToScreen(144)
+        menuw, menuh = _pixelToScreen(83), _pixelToScreen(128)
         
         cls.menupadx, cls.menupady = _pixelToScreen(8 / 5), _pixelToScreen(8 / 5)
         
@@ -90,19 +90,19 @@ class BuildMenu():
                                             image = _ComponentTableImage)
         
         cls.ProducersButton = pygameui.TextImageButton(0, winy - _pixelToScreen(16),
-                                        _pixelToScreen(80), _pixelToScreen(16),
+                                        _pixelToScreen(83), _pixelToScreen(16),
                                         image = _LongButtonImage, text = "Producers",
                                         action = cls.menuSetProducers)
-        cls.MachinesButton = pygameui.TextImageButton(_pixelToScreen(80), winy - _pixelToScreen(16),
-                                        _pixelToScreen(80), _pixelToScreen(16),
+        cls.MachinesButton = pygameui.TextImageButton(_pixelToScreen(83), winy - _pixelToScreen(16),
+                                        _pixelToScreen(83), _pixelToScreen(16),
                                         image = _LongButtonImage, text = "Machines",
                                         action = cls.menuSetMachines)
-        cls.TransportsButton = pygameui.TextImageButton(_pixelToScreen(80 * 2), winy - _pixelToScreen(16),
-                                        _pixelToScreen(80), _pixelToScreen(16),
+        cls.TransportsButton = pygameui.TextImageButton(_pixelToScreen(83 * 2), winy - _pixelToScreen(16),
+                                        _pixelToScreen(83), _pixelToScreen(16),
                                         image = _LongButtonImage, text = "Transports",
                                         action = cls.menuSetTransports)
-        cls.whoknowsbutton = pygameui.TextImageButton(_pixelToScreen(80 * 3), winy - _pixelToScreen(16),
-                                        _pixelToScreen(80), _pixelToScreen(16),
+        cls.whoknowsbutton = pygameui.TextImageButton(_pixelToScreen(83 * 3), winy - _pixelToScreen(16),
+                                        _pixelToScreen(83), _pixelToScreen(16),
                                         image = _LongButtonImage, text = "Polluters")
         
         cls.MenuParent = pygameui.Parent(menux, menuy, 2)
