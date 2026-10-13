@@ -1,8 +1,10 @@
 from pygame import *
 
+font.init()
+
 defaultStyle = {
     "color": (200, 200, 200),
-    "outline": 10,
+    "outline": 1,
     "outlineColor": (0, 0, 0),
     "fontSize": 32,
     "font": "Comic Sans",
@@ -28,7 +30,7 @@ class UI():
         self._y = y
         self._w = w
         self._h = h
-        self.z = z
+        self.z = z or 2
         
         self.color = style["color"]
         self.outline = style["outline"]
@@ -291,6 +293,140 @@ class ImageButton(Button, Image):
     def resetColor(self):
         self.image = self._OriginalImage
 
+class TextImageButton(Button, Label, Image):
+    def __init__(self, x, y, w, h, z = 0, text = "", image = noTexture, action = lambda: ..., style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, text = text, image = image, action = action, style = style, **kwargs)
+        
+        self._OriginalTextColor = style["textColor"]
+        
+        self.lighteningAmount = (255 * self.lighteningAmount) - 255
+        self.darkeningAmount *= 255
+    
+    def onHover(self):
+        self.image = self._OriginalImage.copy()
+        self.image.fill((self.lighteningAmount, self.lighteningAmount, self.lighteningAmount), special_flags = BLEND_RGB_ADD)
+        self.textColor = lighten(self._OriginalTextColor, self.lighteningAmount)
+        
+    def onPress(self):
+        self.image = self._OriginalImage.copy()
+        self.image.fill((self.darkeningAmount, self.darkeningAmount, self.darkeningAmount), special_flags = BLEND_RGB_MULT)
+        self.textColor = lighten(self._OriginalTextColor, self.darkeningAmount)
+    
+    def resetColor(self):
+        self.image = self._OriginalImage
+        self.textColor = self._OriginalTextColor
+        
+    def draw(self, window):
+        if self.hidden: return
+        
+        window.blit(self.image, (self.x, self.y))
+        window.blit(self.font.render(self.text, False, self.textColor), (self.x + self.textPadx, self.y + self.textPady))
+
+class Parent():
+    """class in which all children ui elements depend on the parent in some way"""
+    
+    def __init__(self, x, y, z = 0, **kwargs):
+        super().__init__(**kwargs)
+        
+        self._x = x
+        self._y = y
+        self._z = z
+        
+        self._hidden = False
+        
+        # children will treat the parents hidden as their own, and x y and z as origin
+        
+        self.children: dict[UI, list[float | bool]] = {}
+        self.rootChild = None
+        # index by element, holds original x y z and hidden properties
+    
+    def addChild(self, child):
+        values = [child.x, child.y, child.z, child.hidden]
+        self.children[child] = values
+        
+        child.x = values[0] + self.x
+        child.y = values[1] + self.y
+        child.z = values[2] + self.z
+        child.hidden = values[3] or self.hidden
+    
+    def addChildren(self, *children):
+        for child in children:
+            self.addChild(child)
+    
+    def removeChild(self, child):
+        del self.children[child]
+    
+    def destroyChild(self, child):
+        self.removeChild(child)
+        
+        child.destroy()
+        
+    def destroyAllChildren(self):
+        toRemove = []
+        
+        for child in self.children:
+            if child is self.rootChild: continue
+            
+            toRemove.append(child)
+            
+            child.destroy()
+        
+        for child in toRemove:
+            self.removeChild(child)
+    
+    def destroy(self):
+        self.destroyAllChildren()
+        
+        if self.rootChild is not None:
+            self.rootChild.destroy()
+    
+    @property
+    def x(self):
+        return self._x
+    
+    @x.setter
+    def x(self, value):
+        self._x = value
+        
+        for child, values in self.children.items():
+            child.x = values[0] + self.x
+            child.y = values[1] + self.y
+            child.z = values[2] + self.z
+            child.hidden = values[3] or self.hidden
+    
+    @property
+    def y(self):
+        return self._y
+    
+    @y.setter
+    def y(self, value):
+        self._y = value
+        
+        for child, values in self.children.items():
+            child.y = values[1] + self.y
+
+    @property
+    def z(self):
+        return self._z
+    
+    @z.setter
+    def z(self, value):
+        self._z = value
+    
+        for child, values in self.children.items():
+            child.z = values[2] + self.z
+    
+    @property
+    def hidden(self):
+        return self._hidden
+    
+    @hidden.setter
+    def hidden(self, value):
+        self._hidden = value
+        
+        for child, values in self.children.items():
+            child.hidden = values[3] or self.hidden
+        
 class Sprite(Image):
     def __init__(self, x, y, w, h, z = 0, image = noTexture, style = defaultStyle, **kwargs):
         super().__init__(x, y, w, h, z, image = image, style = style, **kwargs)
@@ -307,6 +443,8 @@ class AnimatableSprite(Sprite):
         self.frame = 0
         self.animationTimer = 0
         self.animationFPS = 10
+        
+        self.z = z
         
         self._originalAnimations = {}
         

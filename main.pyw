@@ -1,10 +1,11 @@
 from pygame import *
 import factory as fac
 from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld
-from encodeFactory import placeComponent, deleteAt
+from encodeFactory import placeComponent, deleteAt, changeRecipeAt
+from buildSystem import BuildMenu
 import pygameui
 
-cursor = transform.scale(image.load(f"Images/Mouse/Cursor.png").convert_alpha(), ((17 / 16) * 64, (17 / 16) * 64))
+cursor = transform.scale(image.load(f"Images/Mouse/Cursor.png").convert_alpha(), (0.25 * 64, 0.25 * 64))
 
 def drawAll(window, dt):
     pygameui.UI.drawAll(window)
@@ -29,9 +30,11 @@ def main():
     flipy = False
     bent = False
     
+    BuildMenu.init()
+    
     while gameRunning:
         # main game loop
-        window.fill(bgColor)
+        window.fill(tuple(bgColor))
         
         dt = clock.tick(FPS) / 1000
         
@@ -68,9 +71,14 @@ def main():
                 elif e.key == K_t:
                     placeComponent(mainFactory, fac.fourWayDistributor, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_q:
+                    placeComponent(mainFactory, fac.basicExtruder, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
                 elif e.key == K_u:
                     placeComponent(mainFactory, fac.twoWayDistributor, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                elif e.key == K_e:
+                    changeRecipeAt(mainFactory, screenToWorld((mousex, mousey)))
                 elif e.key == K_o:
                     deleteAt(mainFactory, screenToWorld((mousex, mousey)))
                 elif e.key == K_r:

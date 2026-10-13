@@ -23,8 +23,11 @@ class Items(Enum):
     IronPlate = 10
     SteelPlate = 11
     TitaniumPlate = 12
-    IronBar = 13
+    IronRod = 13
     IronGear = 14
+    SteelRod = 15
+    TitaniumRod = 16
+    SteelFrame = 17
 
 @dataclass
 class Recipe():
@@ -57,7 +60,7 @@ ironIngotRecipe = Recipe(
 
 ironPlateRecipe = Recipe(
     ingredients = {
-        Items.IronIngot: 2,
+        Items.IronIngot: 1,
         },
     result = [Items.IronPlate, 1],
     time = 1,
@@ -65,11 +68,48 @@ ironPlateRecipe = Recipe(
 
 steelPlateRecipe = Recipe(
     ingredients = {
-        Items.SteelIngot: 2,
+        Items.SteelIngot: 1,
         },
     result = [Items.SteelPlate, 1],
     time = 1,
 )
+
+#* rod recipes
+
+ironRodRecipe = Recipe(
+    ingredients = {
+        Items.IronIngot: 1,
+        },
+    result = [Items.IronRod, 1],
+    time = 1,
+)
+
+steelRodRecipe = Recipe(
+    ingredients = {
+        Items.SteelIngot: 1,
+        },
+    result = [Items.SteelRod, 1],
+    time = 1,
+)
+
+titaniumRodRecipe = Recipe(
+    ingredients = {
+        Items.TitaniumIngot: 1,
+        },
+    result = [Items.TitaniumRod, 1],
+    time = 1,
+)
+
+#* frame recipes
+
+steelFrameRecipe = Recipe(
+    ingredients = {
+        Items.SteelPlate: 2,
+        Items.SteelRod: 4,
+        },
+    result = [Items.SteelFrame, 1],
+    time = 10,
+) 
 
 @dataclass
 class Machine():
@@ -194,10 +234,18 @@ basicPress = Machine(
 
 basicAssembler = Machine(
     type = "BasicAssembler",
-    recipes = [ironIngotRecipe],
+    recipes = [steelFrameRecipe],
+    progress = 0,
+    maxItems = 7,
+    size = (3, 2)
+)
+
+basicExtruder = Machine(
+    type = "BasicExtruder",
+    recipes = [ironRodRecipe, steelRodRecipe],
     progress = 0,
     maxItems = 5,
-    size = (3, 2)
+    size = (2, 2)
 )
 
 #* producers

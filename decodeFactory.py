@@ -3,11 +3,12 @@ import factory as fac
 from copy import copy
 from math import dist
 
-winx = 1100
-winy = 750
+init()
 
-window = display.set_mode((winx, winy))
+window = display.set_mode(display.get_desktop_sizes()[0], NOFRAME)
 display.set_caption("factory game")
+
+winx, winy = window.get_size()
 
 # must import after display initialisation due to pygames convert() requiring it
 import pygameui
@@ -43,6 +44,8 @@ _BasicPressFrames = [image.load(f"Images/Machine/Press/Press{i}.png").convert_al
 
 _BasicAssemblerFrames = [image.load(f"Images/Machine/Assembler/Assembler{i}.png").convert_alpha() for i in range(1, 33)]
 
+_BasicExtruderFrames = [image.load(f"Images/Machine/Extruder/Extruder{i}.png").convert_alpha() for i in range(1, 6)]
+
 #* inventories
 _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
 
@@ -69,7 +72,11 @@ _SteelPlateSprite = image.load("Images/Item/Plate/SteelPlate.png").convert_alpha
 _IronPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
 _TitaniumPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
 
-_IronBarSprite = image.load("Images/Item/Bar/IronBar.png").convert_alpha()
+_IronRodSprite = image.load("Images/Item/Rod/IronRod.png").convert_alpha()
+_SteelRodSprite = image.load("Images/Item/Rod/SteelRod.png").convert_alpha()
+_TitaniumRodSprite = image.load("Images/Item/Rod/TitaniumRod.png").convert_alpha()
+
+_SteelFrameSprite = image.load("Images/Item/Frame/Frame.png").convert_alpha()
 
 _IronGearSprite = image.load("Images/Item/Gear/IronGear.png").convert_alpha()
 
@@ -135,6 +142,10 @@ class Machine(pygameui.AnimatableSprite):
                 self.changeImage(_BasicAssemblerFrames[0])
                 self.addAnimation("assemble", *_BasicAssemblerFrames)
                 self.startAnimation("assemble", 10)
+            case "BasicExtruder":
+                self.changeImage(_BasicExtruderFrames[0])
+                self.addAnimation("roll", *_BasicExtruderFrames)
+                self.startAnimation("roll", 10)
             case _:
                 raise ValueError(f"unknown machine type {type!r}")
             
@@ -207,14 +218,23 @@ class Item(pygameui.Sprite):
             case fac.Items.TitaniumPlate:
                 self.changeImage(_TitaniumPlateSprite)
                 
-            case fac.Items.IronBar:
-                self.changeImage(_IronBarSprite)
+            case fac.Items.IronRod:
+                self.changeImage(_IronRodSprite)
+            case fac.Items.SteelRod:
+                self.changeImage(_SteelRodSprite)
+            case fac.Items.TitaniumRod:
+                self.changeImage(_TitaniumRodSprite)
+            
+            case fac.Items.SteelFrame:
+                self.changeImage(_SteelFrameSprite)
                 
             case fac.Items.IronGear:
                 self.changeImage(_IronGearSprite)
                 
             case _:
                 raise ValueError(f"unknown item type {item.name!r}")
+            
+        self.z = 0
         
         self.item = item
 
@@ -232,7 +252,7 @@ def screenToWorld(screenPos):
     return (worldx, worldy)
 
 def isOffscreen(pos):
-    tolerance = (renderDistance) * 64
+    tolerance = (renderDistance + 1) * 64
     
     # shift by one tile due to position refering to the upperleft of a sprite
     if pos[0] < -tolerance - 64 or pos[0] > winx + tolerance - 64:

@@ -25,6 +25,18 @@ def placeComponent(factory: fac.Factory, component, worldPos: tuple[int, int], o
         case _:
             raise ValueError(f"unknown component type {component!r}")
 
+def changeRecipeAt(factory: fac.Factory, worldPos):
+    """probably temporary funciton"""
+    
+    if worldPos in dec.occupiedSpaces: 
+        if worldPos in dec.visibleComponentsAt:
+            if dec.visibleComponentsAt[worldPos] in factory.machines:
+                machine: fac.Machine = factory.machines[dec.visibleComponentsAt[worldPos]]
+                
+                factory.updateMachine(machine.id, recipe = machine.recipes[(machine.recipes.index(machine.currentRecipe) + 1) % len(machine.recipes)])
+                
+                print(f"recipe is now {machine.currentRecipe}")
+
 def deleteAt(factory, worldPos):
     if worldPos in dec.visibleTransportsAt:
         _deleteTransportAt(factory, worldPos)
