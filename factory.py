@@ -261,7 +261,7 @@ basicExtruder = Machine(
 
 basicDrill = Producer(
     type = "BasicDrill",
-    material = Items.Coal,
+    material = Items.IronOre,
     canHarvest = [Items.Coal, Items.IronOre],
     speed = 1,
     efficiency = 1,

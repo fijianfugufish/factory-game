@@ -152,9 +152,10 @@ class BuildMenu():
         cls.buildingComponent = None
         cls.buildingPosition = (0, 0)
         cls.buildingFlip = (False, False)
+        cls.transportBent = False
         cls.buildingRotation = fac.Directions.North
         
-        cls.buildGhost = GhostComponent(0, 0, _pixelToScreen(16), _pixelToScreen(16), dec._BasicConveyorStraightFrames[0], _transports["BasicConveyor"])
+        cls.buildGhost = None
         
         #* ui elements
         # table of components that will hold selectable icons
@@ -252,17 +253,19 @@ class BuildMenu():
     
     @classmethod
     def buildShowGhost(cls):
-        cls.buildGhost.x, cls.buildGhost.y = dec.worldToSreen(cls.buildingPosition)
+        if cls.buildGhost is not None:
+            cls.buildGhost.x, cls.buildGhost.y = dec.worldToSreen(cls.buildingPosition)
     
     @classmethod
     def buildUpdateGhost(cls, component: dict | None = None):
-        cls.buildGhost.destroy()
+        if cls.buildGhost is not None:
+            cls.buildGhost.destroy()
         
-        if component is None:
-            component = cls.buildGhost.component
+            if component is None:
+                component = cls.buildGhost.component
             
         pos = dec.worldToSreen(cls.buildingPosition)
-        width, height = dec.worldToSreen(component["size"])
+        width, height = (component["size"][0] * 64, (component["size"][1] * 64))
         
         if (cls.buildingRotation.value + 90) % 180 == 0:
             width, height = height, width
@@ -282,19 +285,22 @@ class BuildMenu():
         cls.buildCheckOccipied(cls.buildingPosition)
         
     @classmethod
-    def buildSetComponent(cls, component, componentstr):
+    def buildSetComponent(cls, component, componentdict):
         cls.buildingComponent = component
         
-        cls.buildUpdateGhost(componentstr)
+        cls.buildUpdateGhost(componentdict)
+        
+        cls.transportBent = "Turn" in componentdict["displayName"]
     
     @classmethod
     def buildCheckOccipied(cls, pos):
-        width, height = cls.buildGhost.component["size"]
+        if cls.buildGhost is not None:
+            width, height = cls.buildGhost.component["size"]
 
-        if any((pos[0] + i, pos[1] + j) in dec.occupiedSpaces for i in range(width) for j in range(height)):
-            cls.buildGhost.image = cls.buildGhost.redImage
-        else:
-            cls.buildGhost.image = cls.buildGhost.normalImage
+            if any((pos[0] + i, pos[1] + j) in dec.occupiedSpaces for i in range(width) for j in range(height)):
+                cls.buildGhost.image = cls.buildGhost.redImage
+            else:
+                cls.buildGhost.image = cls.buildGhost.normalImage
         
     @classmethod
     def buildSetPosition(cls, pos):
@@ -326,5 +332,11 @@ class BuildMenu():
     @classmethod
     def build(cls, factory):
         if cls.buildingComponent is not None:
-            placeComponent(factory, cls.buildingComponent, cls.buildingPosition, cls.buildingRotation, cls.buildingFlip)
+            # flip flips for transports cause they weird
+            if isinstance(cls.buildingComponent, fac.Transport):
+                placeComponent(factory, cls.buildingComponent, cls.buildingPosition, cls.buildingRotation, (cls.buildingFlip[1], cls.buildingFlip[0]), cls.transportBent)
+            else:
+                placeComponent(factory, cls.buildingComponent, cls.buildingPosition, cls.buildingRotation, cls.buildingFlip, cls.transportBent)
+            
+            cls.buildGhost.image = cls.buildGhost.redImage
             
