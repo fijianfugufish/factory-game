@@ -9,8 +9,8 @@ defaultStyle = {
     "fontSize": 32,
     "font": "fonts/pixelfont.ttf",
     "textColor": (0, 255, 0),
-    "textPadx": 5,
-    "textPady": 5,
+    "textPadx": 32,
+    "textPady": 16,
     "darkeningAmount": 0.8,
     "lighteningAmount": 1.2,
 }

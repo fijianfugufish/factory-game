@@ -41,6 +41,13 @@ _machines = {
         "price": [fac.Items.IronOre, 4],
         "component": fac.basicPress,
     },
+    "BasicCutter": {
+        "image": dec._BasicCutterFrames[0],
+        "displayName": "Basic Cutter",
+        "size": (2, 2),
+        "price": [fac.Items.IronOre, 4],
+        "component": fac.basicCutter,
+    },
     "BasicAssembler": {
         "image": dec._BasicAssemblerFrames[0],
         "displayName": "Basic Assembler",

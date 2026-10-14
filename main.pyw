@@ -25,8 +25,6 @@ def main():
     
     decodeAndRender(mainFactory, forceRender = True)
     
-    bent = False
-    
     BuildMenu.init()
     
     while gameRunning:
@@ -53,8 +51,10 @@ def main():
                 elif e.key == K_f:
                     BuildMenu.buildFlip()
                 elif e.key == K_p:
-                    bent = not bent
-            
+                    # temporary coal drill
+                    placeComponent(mainFactory, fac.drill2, screenToWorld((mousex, mousey)), fac.Directions.North, (False, False))
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                    
             if e.type == MOUSEMOTION:
                 BuildMenu.buildSetPosition((mousex, mousey))
             

@@ -28,6 +28,12 @@ class Items(Enum):
     SteelRod = 15
     TitaniumRod = 16
     SteelFrame = 17
+    IronScrew = 18
+    IronSpring = 19
+    UraniumOre = 20
+    UraniumRod = 21
+    ReinforcedPlate = 22
+    SimpleMechanicParts = 23
 
 @dataclass
 class Recipe():
@@ -74,6 +80,16 @@ steelPlateRecipe = Recipe(
     time = 1,
 )
 
+reinforcedPlateRecipe = Recipe(
+    ingredients = {
+        Items.SteelPlate: 1,
+        Items.IronPlate: 1,
+        Items.IronScrew: 4,
+        },
+    result = [Items.ReinforcedPlate, 1],
+    time = 10,
+)
+
 #* rod recipes
 
 ironRodRecipe = Recipe(
@@ -100,7 +116,7 @@ titaniumRodRecipe = Recipe(
     time = 1,
 )
 
-#* frame recipes
+#* frame recipe
 
 steelFrameRecipe = Recipe(
     ingredients = {
@@ -110,6 +126,48 @@ steelFrameRecipe = Recipe(
     result = [Items.SteelFrame, 1],
     time = 10,
 ) 
+
+#* gear recipe
+
+ironGearRecipe = Recipe(
+    ingredients = {
+        Items.IronPlate: 1,
+        },
+    result = [Items.IronGear, 1],
+    time = 1,
+) 
+
+#* spring recipe
+
+ironSpringRecipe = Recipe(
+    ingredients = {
+        Items.IronRod: 1,
+        },
+    result = [Items.IronSpring, 1],
+    time = 3,
+) 
+
+#* screw recipe
+
+ironScrewRecipe = Recipe(
+    ingredients = {
+        Items.IronRod: 1,
+        },
+    result = [Items.IronScrew, 1],
+    time = 2,
+) 
+
+#* mechanic parts recipe
+
+simpleMechanicPartsRecipe = Recipe(
+    ingredients = {
+        Items.IronGear: 1,
+        Items.IronSpring: 1,
+        Items.IronScrew: 1,
+        },
+    result = [Items.SimpleMechanicParts, 1],
+    time = 10,
+)
 
 @dataclass
 class Machine():
@@ -243,7 +301,7 @@ basicPress = Machine(
 
 basicAssembler = Machine(
     type = "BasicAssembler",
-    recipes = [steelFrameRecipe],
+    recipes = [steelFrameRecipe, reinforcedPlateRecipe, simpleMechanicPartsRecipe],
     progress = 0,
     maxItems = 7,
     size = (3, 2)
@@ -252,6 +310,14 @@ basicAssembler = Machine(
 basicExtruder = Machine(
     type = "BasicExtruder",
     recipes = [ironRodRecipe, steelRodRecipe],
+    progress = 0,
+    maxItems = 5,
+    size = (2, 2)
+)
+
+basicCutter = Machine(
+    type = "BasicCutter",
+    recipes = [ironGearRecipe, ironSpringRecipe, ironScrewRecipe],
     progress = 0,
     maxItems = 5,
     size = (2, 2)
@@ -271,7 +337,7 @@ basicDrill = Producer(
 
 drill2 = Producer(
     type = "BasicDrill",
-    material = Items.IronOre,
+    material = Items.Coal,
     canHarvest = [Items.Coal],
     speed = 4,
     efficiency = 5,

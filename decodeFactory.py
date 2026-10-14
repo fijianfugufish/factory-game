@@ -47,6 +47,8 @@ _BasicAssemblerFrames = [image.load(f"Images/Machine/Assembler/Assembler{i}.png"
 
 _BasicExtruderFrames = [image.load(f"Images/Machine/Extruder/Extruder{i}.png").convert_alpha() for i in range(1, 6)]
 
+_BasicCutterFrames = [image.load(f"Images/Machine/Cutter/Cutter{i}.png").convert_alpha() for i in range(1, 31)]
+
 #* inventories
 _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
 
@@ -63,6 +65,7 @@ _CoalSprite    = image.load("Images/Item/Ore/Coal.png").convert_alpha()
 _IronOreSprite = image.load("Images/Item/Ore/IronOre.png").convert_alpha()
 _CopperOreSprite = image.load("Images/Item/Ore/CopperOre.png").convert_alpha()
 _TitaniumOreSprite = image.load("Images/Item/Ore/TitaniumOre.png").convert_alpha()
+_UraniumOreSprite = image.load("Images/Item/Ore/UraniumOre.png").convert_alpha()
 
 _SteelIngotSprite = image.load("Images/Item/Ingot/SteelIngot.png").convert_alpha()
 _IronIngotSprite = image.load("Images/Item/Ingot/IronIngot.png").convert_alpha()
@@ -72,14 +75,20 @@ _TitaniumIngotSprite = image.load("Images/Item/Ingot/TitaniumIngot.png").convert
 _SteelPlateSprite = image.load("Images/Item/Plate/SteelPlate.png").convert_alpha()
 _IronPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
 _TitaniumPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
+_ReinforcedPlateSprite = image.load("Images/Item/Plate/ReinforcedPlate.png").convert_alpha()
 
 _IronRodSprite = image.load("Images/Item/Rod/IronRod.png").convert_alpha()
 _SteelRodSprite = image.load("Images/Item/Rod/SteelRod.png").convert_alpha()
 _TitaniumRodSprite = image.load("Images/Item/Rod/TitaniumRod.png").convert_alpha()
+_UraniumRodSprite = image.load("Images/Item/Rod/UraniumRod.png").convert_alpha()
 
 _SteelFrameSprite = image.load("Images/Item/Frame/Frame.png").convert_alpha()
 
 _IronGearSprite = image.load("Images/Item/Gear/IronGear.png").convert_alpha()
+_IronSpringSprite = image.load("Images/Item/Spring/IronSpring.png").convert_alpha()
+_IronScrewSprite = image.load("Images/Item/Screw/IronScrew.png").convert_alpha()
+
+_SimpleMechanicPartsSprite = image.load("Images/Item/MechanicParts/SimpleMechanicParts.png").convert_alpha()
 
 class Producer(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
@@ -147,6 +156,10 @@ class Machine(pygameui.AnimatableSprite):
                 self.changeImage(_BasicExtruderFrames[0])
                 self.addAnimation("roll", *_BasicExtruderFrames)
                 self.startAnimation("roll", 10)
+            case "BasicCutter":
+                self.changeImage(_BasicCutterFrames[0])
+                self.addAnimation("slice", *_BasicCutterFrames)
+                self.startAnimation("slice", 10)
             case "AdvancedFurnace":
                 self.changeImage(_AdvancedFurnaceFrames[0])
                 self.addAnimation("supercook", *_AdvancedFurnaceFrames)
@@ -206,6 +219,8 @@ class Item(pygameui.Sprite):
                 self.changeImage(_CopperOreSprite)
             case fac.Items.TitaniumOre:
                 self.changeImage(_TitaniumOreSprite)
+            case fac.Items.UraniumOre:
+                self.changeImage(_UraniumOreSprite)
                 
             case fac.Items.SteelIngot:
                 self.changeImage(_SteelIngotSprite)
@@ -222,6 +237,8 @@ class Item(pygameui.Sprite):
                 self.changeImage(_IronPlateSprite)
             case fac.Items.TitaniumPlate:
                 self.changeImage(_TitaniumPlateSprite)
+            case fac.Items.ReinforcedPlate:
+                self.changeImage(_ReinforcedPlateSprite)
                 
             case fac.Items.IronRod:
                 self.changeImage(_IronRodSprite)
@@ -229,12 +246,21 @@ class Item(pygameui.Sprite):
                 self.changeImage(_SteelRodSprite)
             case fac.Items.TitaniumRod:
                 self.changeImage(_TitaniumRodSprite)
+            case fac.Items.UraniumRod:
+                self.changeImage(_UraniumRodSprite)   
             
             case fac.Items.SteelFrame:
                 self.changeImage(_SteelFrameSprite)
                 
             case fac.Items.IronGear:
                 self.changeImage(_IronGearSprite)
+            case fac.Items.IronScrew:
+                self.changeImage(_IronScrewSprite)  
+            case fac.Items.IronSpring:
+                self.changeImage(_IronSpringSprite)
+                
+            case fac.Items.SimpleMechanicParts:
+                self.changeImage(_SimpleMechanicPartsSprite)
                 
             case _:
                 raise ValueError(f"unknown item type {item.name!r}")
