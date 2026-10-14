@@ -35,8 +35,6 @@ def changeRecipeAt(factory: fac.Factory, worldPos):
                 
                 factory.updateMachine(machine.id, recipe = machine.recipes[(machine.recipes.index(machine.currentRecipe) + 1) % len(machine.recipes)])
                 
-                print(f"recipe is now {machine.currentRecipe}")
-
 def deleteAt(factory, worldPos):
     if worldPos in dec.visibleTransportsAt:
         _deleteTransportAt(factory, worldPos)

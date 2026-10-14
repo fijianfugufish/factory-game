@@ -7,7 +7,7 @@ defaultStyle = {
     "outline": 1,
     "outlineColor": (0, 0, 0),
     "fontSize": 32,
-    "font": "Comic Sans",
+    "font": "fonts/pixelfont.ttf",
     "textColor": (0, 255, 0),
     "textPadx": 5,
     "textPady": 5,
@@ -127,8 +127,10 @@ class Button(UI):
         self.onHover()
         self.action()
     
-    def handleButton(self, mousePos, event):
-        if self.hidden: return
+    def handleButton(self, mousePos, event) -> bool:
+        """returns true if the button was interacted with"""
+        
+        if self.hidden: return False
         
         if self.rect.collidepoint(mousePos):
             if not self._needsReset:
@@ -140,10 +142,15 @@ class Button(UI):
                 self.onPress()
             elif event == MOUSEBUTTONUP:
                 self.onRelease()
+                
+            return True
+        
         else:
             if self._needsReset:
                 self.resetColor()
                 self._needsReset = False
+            
+            return False
     
     def setColor(self, value):
         self.color = value
@@ -158,16 +165,22 @@ class Button(UI):
         Button.buttonInstances.remove(self)
     
     @classmethod
-    def handleAllButtons(cls, mousePos, event):
+    def handleAllButtons(cls, mousePos, event) -> bool:
+        """returns true if a button was interacted with"""
+        
+        returnValues = []
+        
         for i in cls.buttonInstances:
-            i.handleButton(mousePos, event)
+            returnValues.append(i.handleButton(mousePos, event))
+        
+        return any(returnValues)
     
         
 class Label(UI):
     def __init__(self, x, y, w, h, z = 0, text = "", style = defaultStyle, **kwargs):
         super().__init__(x, y, w, h, z, style = style, **kwargs)
         
-        self.font = font.SysFont(style["font"], style["fontSize"])
+        self.font = font.Font(style["font"], style["fontSize"])
         self.text = text
         self.textColor = style["textColor"]
         self.textPadx = style["textPadx"]
@@ -253,6 +266,7 @@ class Image(UI):
         self._h = value
         self.rect.h = value
         self.image = transform.scale(self.image, (self.w, self.h))
+        self._OriginalImage = transform.scale(self._OriginalImage, (self.w, self.h))
     
     @property
     def image(self):

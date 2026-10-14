@@ -166,6 +166,7 @@ class Inventory():
 class Producer():
     type: str
     material: Items
+    canHarvest: list[Items]
     speed: float
     efficiency: int
     maxItems: int
@@ -224,6 +225,14 @@ basicFurnace = Machine(
     size = (2, 2)
 )
 
+advancedFurnace = Machine(
+    type = "AdvancedFurnace",
+    recipes = [steelIngotRecipe, ironIngotRecipe],
+    progress = 0,
+    maxItems = 5,
+    size = (2, 2)
+)
+
 basicPress = Machine(
     type = "BasicPress",
     recipes = [ironPlateRecipe, steelPlateRecipe],
@@ -250,9 +259,10 @@ basicExtruder = Machine(
 
 #* producers
 
-drill = Producer(
+basicDrill = Producer(
     type = "BasicDrill",
     material = Items.Coal,
+    canHarvest = [Items.Coal, Items.IronOre],
     speed = 1,
     efficiency = 1,
     maxItems = 5,
@@ -262,6 +272,7 @@ drill = Producer(
 drill2 = Producer(
     type = "BasicDrill",
     material = Items.IronOre,
+    canHarvest = [Items.Coal],
     speed = 4,
     efficiency = 5,
     maxItems = 5,

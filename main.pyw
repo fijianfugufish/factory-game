@@ -25,9 +25,6 @@ def main():
     
     decodeAndRender(mainFactory, forceRender = True)
     
-    direction = fac.Directions.North
-    flipx = False
-    flipy = False
     bent = False
     
     BuildMenu.init()
@@ -47,50 +44,24 @@ def main():
                 gameRunning = False
             
             if e.type == KEYDOWN:
-                if e.key == K_b:
-                    placeComponent(mainFactory, fac.basicConveyor, screenToWorld((mousex, mousey)), direction, (flipx, flipy), bent = bent)
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_v:
-                    placeComponent(mainFactory, fac.basicFurnace, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_n:
-                    placeComponent(mainFactory, fac.basicPress, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_m:
-                    placeComponent(mainFactory, fac.basicAssembler, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_c:
-                    placeComponent(mainFactory, fac.drill, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_i:
-                    placeComponent(mainFactory, fac.basicContainer, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_z:
-                    placeComponent(mainFactory, fac.drill2, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_t:
-                    placeComponent(mainFactory, fac.fourWayDistributor, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_q:
-                    placeComponent(mainFactory, fac.basicExtruder, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_u:
-                    placeComponent(mainFactory, fac.twoWayDistributor, screenToWorld((mousex, mousey)), direction, (flipx, flipy))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                elif e.key == K_e:
+                if e.key == K_e:
                     changeRecipeAt(mainFactory, screenToWorld((mousex, mousey)))
                 elif e.key == K_o:
                     deleteAt(mainFactory, screenToWorld((mousex, mousey)))
                 elif e.key == K_r:
-                    direction = fac.Directions((direction.value + 90) % 360)
-                elif e.key == K_x:
-                    flipx = not flipx
-                elif e.key == K_y:
-                    flipy = not flipy
+                    BuildMenu.buildRotateClockwise()
+                elif e.key == K_f:
+                    BuildMenu.buildFlip()
                 elif e.key == K_p:
                     bent = not bent
             
-            pygameui.Button.handleAllButtons((mousex, mousey), e.type)
+            if e.type == MOUSEMOTION:
+                BuildMenu.buildSetPosition((mousex, mousey))
+            
+            if not pygameui.Button.handleAllButtons((mousex, mousey), e.type):
+                if e.type == MOUSEBUTTONUP:
+                    BuildMenu.build(mainFactory)
+                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
         
         keys = key.get_pressed()
         
@@ -112,6 +83,8 @@ def main():
         mainFactory.step(dt)
         
         decodeAndRender(mainFactory, dt = dt, moved = moved)
+        
+        BuildMenu.buildShowGhost()
         
         drawAll(window, dt)
         

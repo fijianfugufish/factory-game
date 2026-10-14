@@ -39,6 +39,7 @@ _BasicDrillFrames = [image.load(f"Images/Producer/Drill/Drill{i}.png").convert_a
 
 #* machines
 _BasicFurnaceFrames = [image.load(f"Images/Machine/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
+_AdvancedFurnaceFrames = [image.load(f"Images/Machine/Furnace/AdvancedFurnace{i}.png").convert_alpha() for i in range(1, 7)]
 
 _BasicPressFrames = [image.load(f"Images/Machine/Press/Press{i}.png").convert_alpha() for i in range(1, 12)]
 
@@ -146,6 +147,10 @@ class Machine(pygameui.AnimatableSprite):
                 self.changeImage(_BasicExtruderFrames[0])
                 self.addAnimation("roll", *_BasicExtruderFrames)
                 self.startAnimation("roll", 10)
+            case "AdvancedFurnace":
+                self.changeImage(_AdvancedFurnaceFrames[0])
+                self.addAnimation("supercook", *_AdvancedFurnaceFrames)
+                self.startAnimation("supercook", 10)
             case _:
                 raise ValueError(f"unknown machine type {type!r}")
             
