@@ -55,13 +55,6 @@ _machines = {
         "price": [fac.Items.IronOre, 4],
         "component": fac.basicAssembler,
     },
-    "BasicContainer":{
-        "image": dec._BasicContainerSprite,
-        "displayName": "Basic Container",
-        "size": (2, 2),
-        "price": [fac.Items.IronOre, 4],
-        "component": fac.basicContainer,
-    },
     "AdvancedFurnace": {
         "image": dec._AdvancedFurnaceFrames[0],
         "displayName": "Uranium Furnace",
@@ -99,6 +92,13 @@ _transports = {
         "size": (2, 1),
         "price": [fac.Items.IronOre, 4],
         "component": fac.twoWayDistributor,
+    },
+    "BasicContainer":{
+        "image": dec._BasicContainerSprite,
+        "displayName": "Basic Container",
+        "size": (2, 2),
+        "price": [fac.Items.IronOre, 4],
+        "component": fac.basicContainer,
     },
 }
 

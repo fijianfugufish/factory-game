@@ -134,7 +134,7 @@ ironGearRecipe = Recipe(
         Items.IronPlate: 1,
         },
     result = [Items.IronGear, 1],
-    time = 1,
+    time = 2,
 ) 
 
 #* spring recipe
