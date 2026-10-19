@@ -173,6 +173,7 @@ simpleMechanicPartsRecipe = Recipe(
 class Machine():
     type: str
     recipes: list[Recipe]
+    speedMultiplier: float
     maxItems: int
     size: tuple[int, int]                       # how many tiles the machine takes up, x by y from position
     position: tuple[int, int] = (0, 0)
@@ -273,12 +274,21 @@ basicConveyor = Transport(
     # output = None,
 )
 
+advancedConveyor = Transport(
+    type = "AdvancedConveyor",
+    speed = 4,
+    length = 10,
+    # input = None,
+    # output = None,
+)
+
 #* machines
 
 basicFurnace = Machine(
     type = "BasicFurnace",
     recipes = [steelIngotRecipe, ironIngotRecipe],
     progress = 0,
+    speedMultiplier = 1,
     maxItems = 5,
     size = (2, 2)
 )
@@ -287,6 +297,7 @@ advancedFurnace = Machine(
     type = "AdvancedFurnace",
     recipes = [steelIngotRecipe, ironIngotRecipe],
     progress = 0,
+    speedMultiplier = 2,
     maxItems = 5,
     size = (2, 2)
 )
@@ -295,6 +306,7 @@ basicPress = Machine(
     type = "BasicPress",
     recipes = [ironPlateRecipe, steelPlateRecipe],
     progress = 0,
+    speedMultiplier = 1,
     maxItems = 5,
     size = (2, 2)
 )
@@ -303,6 +315,7 @@ basicAssembler = Machine(
     type = "BasicAssembler",
     recipes = [steelFrameRecipe, reinforcedPlateRecipe, simpleMechanicPartsRecipe],
     progress = 0,
+    speedMultiplier = 1,
     maxItems = 7,
     size = (3, 2)
 )
@@ -311,6 +324,7 @@ basicExtruder = Machine(
     type = "BasicExtruder",
     recipes = [ironRodRecipe, steelRodRecipe],
     progress = 0,
+    speedMultiplier = 1,
     maxItems = 5,
     size = (2, 2)
 )
@@ -319,6 +333,16 @@ basicCutter = Machine(
     type = "BasicCutter",
     recipes = [ironGearRecipe, ironSpringRecipe, ironScrewRecipe],
     progress = 0,
+    speedMultiplier = 1,
+    maxItems = 5,
+    size = (2, 2)
+)
+
+advancedCutter = Machine(
+    type = "AdvancedCutter",
+    recipes = [ironGearRecipe, ironSpringRecipe, ironScrewRecipe],
+    progress = 0,
+    speedMultiplier = 2,
     maxItems = 5,
     size = (2, 2)
 )
@@ -990,7 +1014,7 @@ class Factory():
                 )
             
             if recipeMet:
-                machine.progress += dt
+                machine.progress += dt * machine.speedMultiplier
                 
                 if machine.progress < machine.currentRecipe.time:
                     continue

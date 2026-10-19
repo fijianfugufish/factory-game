@@ -278,6 +278,9 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
         if bent:
             factory.changeTransportTurn(resultTransportId, [None, bendDirection], True)
     
+    dec.visibleTransportsAt[worldPos] = resultTransportId
+    dec.occupiedSpaces.add(worldPos)
+    
     _checkTransportConnections(factory, resultTransportId)
 
 def _connectComponent(factory: fac.Factory, component: any, componentid: int, transportid: int, isInput: bool):

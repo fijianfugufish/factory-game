@@ -48,6 +48,7 @@ _BasicAssemblerFrames = [image.load(f"Images/Machine/Assembler/Assembler{i}.png"
 _BasicExtruderFrames = [image.load(f"Images/Machine/Extruder/Extruder{i}.png").convert_alpha() for i in range(1, 6)]
 
 _BasicCutterFrames = [image.load(f"Images/Machine/Cutter/Cutter{i}.png").convert_alpha() for i in range(1, 31)]
+_AdvancedCutterFrames = [image.load(f"Images/Machine/Cutter/AdvancedCutter{i}.png").convert_alpha() for i in range(1, 31)]
 
 #* inventories
 _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
@@ -55,6 +56,8 @@ _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.pn
 #* transports
 _BasicConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
 _BasicConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
+_AdvancedConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/AdvancedConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
+_AdvancedConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/AdvancedConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
 #* routers
 _FourWayDistributor = image.load(f"Images/Router/FourWayDistributor.png").convert_alpha()
@@ -123,6 +126,15 @@ class Transport(pygameui.AnimatableSprite):
                     self.addAnimation("move", *_BasicConveyorStraightFrames)
                     
                 self.currentAnimation = "move"
+            case "AdvancedConveyor":
+                if bent:
+                    self.changeImage(_AdvancedConveyorTurnFrames[0])
+                    self.addAnimation("supermove", *_AdvancedConveyorTurnFrames)
+                else:
+                    self.changeImage(_AdvancedConveyorStraightFrames[0])
+                    self.addAnimation("supermove", *_AdvancedConveyorStraightFrames)
+                    
+                self.currentAnimation = "supermove"
             case _:
                 raise ValueError(f"unknown transport type {type!r}")
         
@@ -164,6 +176,10 @@ class Machine(pygameui.AnimatableSprite):
                 self.changeImage(_AdvancedFurnaceFrames[0])
                 self.addAnimation("supercook", *_AdvancedFurnaceFrames)
                 self.startAnimation("supercook", 10)
+            case "AdvancedCutter":
+                self.changeImage(_AdvancedCutterFrames[0])
+                self.addAnimation("superslice", *_AdvancedCutterFrames)
+                self.startAnimation("superslice", 10)
             case _:
                 raise ValueError(f"unknown machine type {type!r}")
             

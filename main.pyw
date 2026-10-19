@@ -20,6 +20,7 @@ def main():
     bgColor = (80, 80, 100)
     
     gameRunning = True
+    dragging = False
     
     mainFactory = fac.Factory()
     
@@ -29,8 +30,8 @@ def main():
     
     while gameRunning:
         # main game loop
-        window.fill(tuple(bgColor))
-        
+        window.fill(bgColor)
+                
         dt = clock.tick(FPS) / 1000
         
         events = event.get()
@@ -54,14 +55,21 @@ def main():
                     # temporary coal drill
                     placeComponent(mainFactory, fac.drill2, screenToWorld((mousex, mousey)), fac.Directions.North, (False, False))
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
-                    
-            if e.type == MOUSEMOTION:
-                BuildMenu.buildSetPosition((mousex, mousey))
             
             if not pygameui.Button.handleAllButtons((mousex, mousey), e.type):
                 if e.type == MOUSEBUTTONUP:
-                    BuildMenu.build(mainFactory)
+                    if dragging:
+                        BuildMenu.endBuildDrag(mainFactory)
+                        dragging = False
+                    else:
+                        BuildMenu.build(mainFactory)
+                        
                     decodeAndRender(mainFactory, dt = dt, forceRender = True)
+                        
+                elif e.type == MOUSEBUTTONDOWN:
+                    if not dragging and isinstance(BuildMenu.buildingComponent, fac.Transport) and "Turn" not in BuildMenu.buildingComponentDict["displayName"]:
+                        BuildMenu.startBuildDrag(mainFactory, (mousex, mousey))
+                        dragging = True
         
         keys = key.get_pressed()
         
@@ -79,6 +87,11 @@ def main():
         if keys[K_d]:
             moveCameraRight(5 * dt)
             moved = True
+        
+        if dragging:
+            BuildMenu.updateBuildDrag(mainFactory, (mousex, mousey))
+        
+        BuildMenu.buildSetPosition((mousex, mousey))
         
         mainFactory.step(dt)
         
