@@ -189,6 +189,7 @@ class BuildMenu():
         cls.initialDragPosition = (0, 0)
         cls.finalDragPosition = (0, 0)
         cls.dragxfirst = False
+        cls.validDrag = False
         
         cls.buildGhost = None
         cls.dragGhosts = []
@@ -461,6 +462,8 @@ class BuildMenu():
         directionCondition = lambda: i <= dx and dx != 0 if xfirst else dx != 0 and (dy == 0 or i > dy)
         bentCondition = lambda: i == dx and dx != 0 and dy != 0 if xfirst else i == dy and dx != 0 and dy != 0
         
+        makeRed = False
+        
         for i, pos in enumerate(positions):
             if flipCondition():
                 cls.buildFlip(directionx if xfirst else directiony)
@@ -471,6 +474,17 @@ class BuildMenu():
             
             if flipCondition():
                 cls.buildFlip(directionx if xfirst else directiony)
+                
+            makeRed = makeRed or pos in dec.occupiedSpaces
+        
+        if makeRed:
+            for ghost in cls.dragGhosts:
+                ghost.image = ghost.redImage
+        else:
+            for ghost in cls.dragGhosts:
+                ghost.image = ghost.normalImage
+        
+        cls.validDrag = not makeRed
         
         if cls.buildGhost is not None:
             cls.buildGhost.destroy()
@@ -481,6 +495,8 @@ class BuildMenu():
         cls.destroyGhosts()
         
         cls.buildUpdateGhost(cls.buildingComponentDict)
+        
+        if not cls.validDrag: return
         
         positions, dx, directionx, dy, directiony = cls.findDragPositions(xfirst = cls.dragxfirst)
             
