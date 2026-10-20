@@ -145,6 +145,194 @@ def _checkComponentAt(factory, transportid, pos):
     elif componentid in factory.routers:
         _checkAndConnectComponent(factory, componentid, transportid)
 
+def _matchingTransportEnd(factory, transportType, pos, direction):
+    transportid = dec.visibleTransportsAt.get(pos)
+
+    if transportid is None:
+        return None
+
+    existing = factory.transports.get(transportid)
+
+    if existing is None:
+        return None
+
+    if (existing.type == transportType
+        and existing.turns[-1][0] == pos
+        and existing.finalDirection is direction):
+
+        return transportid
+
+    return None
+
+
+def _matchingTransportStart(factory, transportType, pos, direction):
+    transportid = dec.visibleTransportsAt.get(pos)
+
+    if transportid is None:
+        return None
+
+    existing = factory.transports.get(transportid)
+
+    if existing is None:
+        return None
+
+    if (existing.type == transportType and existing.turns[0][0] == pos and existing.initialDirection is direction):
+        return transportid
+
+    return None
+
+def _getConnectableComponent(factory, componentid):
+    for components in (factory.machines, factory.producers, factory.inventories, factory.routers):
+        component = components.get(componentid)
+
+        if component is not None:
+            return component
+
+    return None
+
+def _worldComponentPorts(component):
+    ports = None
+
+    if isinstance(component, fac.Machine):
+        if component.size == (2, 2):
+            ports = [
+                (0, 0, fac.Directions.North, 1),
+                (1, 0, fac.Directions.North, 1),
+                (0, 1, fac.Directions.South, -1),
+            ]
+
+        elif component.size == (3, 2):
+            ports = [
+                (0, 0, fac.Directions.North, 1),
+                (1, 0, fac.Directions.North, 1),
+                (2, 0, fac.Directions.North, 1),
+                (1, 1, fac.Directions.South, -1),
+            ]
+
+    elif isinstance(component, fac.Producer):
+        if component.size == (2, 2):
+            ports = [
+                (0, 1, fac.Directions.South, -1),
+            ]
+
+    elif isinstance(component, fac.Inventory):
+        if component.size == (2, 2):
+            ports = [
+                (0, 0, fac.Directions.North, 2),
+                (0, 1, fac.Directions.South, 2),
+            ]
+
+    elif isinstance(component, fac.Router):
+        if component.size == (1, 1):
+            if component.type == "FourWayDistributor":
+                ports = [
+                    (0, 0, fac.Directions.West, 2),
+                    (0, 0, fac.Directions.North, 2),
+                    (0, 0, fac.Directions.East, 2),
+                    (0, 0, fac.Directions.South, 2),
+                ]
+
+        elif component.size == (2, 1):
+            if component.type == "TwoWayDistributor":
+                ports = [
+                    (0, 0, fac.Directions.North, 2),
+                    (0, 0, fac.Directions.South, 2),
+                    (1, 0, fac.Directions.South, 2),
+                ]
+
+    if ports is None:
+        return
+
+    for x, y, side, portType in ports:
+        x, y, side = _transformPort(x, y, side, component.size, component.rotation, component.flipped)
+
+        worldPos = (component.position[0] + x, component.position[1] + y)
+
+        yield worldPos, side, portType
+        
+def suggestDragEndpointDirection(factory, transport, positions, atStart):
+    if len(positions) < 2:
+        return None
+
+    offsets = {
+        fac.Directions.North: (0, -1),
+        fac.Directions.East: (1, 0),
+        fac.Directions.South: (0, 1),
+        fac.Directions.West: (-1, 0)
+    }
+
+    endpoint = positions[0] if atStart else positions[-1]
+
+    pathDirection = (_directionBetween(positions[0], positions[1]) if atStart else _directionBetween(positions[-2], positions[-1]))
+
+    matches = set()
+
+    # check existing conveyor endpoints
+    for direction, (dx, dy) in offsets.items():
+
+        if atStart:
+            neighbour = (endpoint[0] - dx, endpoint[1] - dy)
+
+            connection = _matchingTransportEnd(factory, transport.type, neighbour, direction)
+
+        else:
+            neighbour = (endpoint[0] + dx, endpoint[1] + dy)
+
+            connection = _matchingTransportStart(factory, transport.type, neighbour, direction)
+
+        if connection is not None:
+            matches.add(direction)
+
+    # check existing component inputs and outputs
+    for dx, dy in offsets.values():
+
+        neighbour = (endpoint[0] + dx, endpoint[1] + dy)
+
+        componentid = dec.visibleComponentsAt.get(neighbour)
+
+        if componentid is None:
+            continue
+
+        component = _getConnectableComponent(factory, componentid)
+
+        if component is None:
+            continue
+
+        for portPos, side, portType in _worldComponentPorts(component):
+
+            ox, oy = offsets[side]
+
+            outside = (portPos[0] + ox, portPos[1] + oy)
+
+            if outside != endpoint:
+                continue
+
+            if atStart and portType in (-1, 2):
+                matches.add(side)
+
+            elif not atStart and portType in (1, 2):
+                matches.add(fac.Directions((side.value + 180) % 360))
+
+    # reject directions that would require a U-turn
+    valid = set()
+
+    for direction in matches:
+
+        angle = ((pathDirection.value - direction.value) if atStart else (direction.value - pathDirection.value)) % 360
+
+        if angle in (0, 90, 270):
+            valid.add(direction)
+
+    # prefer a straight connection
+    if pathDirection in valid:
+        return pathDirection
+
+    # only choose a bend if it is unambiguous
+    if len(valid) == 1:
+        return next(iter(valid))
+
+    return None
+
 def _validateAndEncodeTransport(factory: fac.Factory, transport, 
                                worldPos: tuple[int, int], orientation: fac.Directions,
                                flip: tuple[bool, bool], bent: bool):
@@ -333,7 +521,7 @@ def _transformPort(x, y, side, size, rotation, flipped):
         width, height = height, width
         side = fac.Directions((side.value + 90) % 360)
 
-    # flip X
+    # flip x
     if flipped[0]:
         x = width - 1 - x
 
@@ -342,7 +530,7 @@ def _transformPort(x, y, side, size, rotation, flipped):
         elif side is fac.Directions.West:
             side = fac.Directions.East
 
-    # flip Y
+    # flip y
     if flipped[1]:
         y = height - 1 - y
 
@@ -462,17 +650,14 @@ def _checkAndConnectComponent(factory: fac.Factory, componentid: int, transporti
         incomingDirection = fac.Directions((side.value + 180) % 360)
         outgoingDirection = side
 
-        # INPUT
         if portType == 1:
             if transport.turns[-1][0] == transportPos and transport.finalDirection is incomingDirection:
                 _connectComponent(factory, component, componentid, transportid, True)
 
-        # OUTPUT
         elif portType == -1:
             if transport.turns[0][0] == transportPos and transport.initialDirection is outgoingDirection:
                 _connectComponent(factory, component, componentid, transportid, False)
 
-        # BOTH
         elif portType == 2:
             if transport.turns[-1][0] == transportPos and transport.finalDirection is incomingDirection:
                 _connectComponent(factory, component, componentid, transportid, True)

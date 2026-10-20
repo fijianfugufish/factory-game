@@ -2,7 +2,7 @@ from pygame import *
 import pygameui
 import decodeFactory as dec
 import factory as fac
-from encodeFactory import placeComponent
+from encodeFactory import placeComponent, suggestDragEndpointDirection, _directionBetween
 
 _ComponentTableImage = image.load("Images/UI/Buttons/ComponentTable.png").convert_alpha()
 _SmallButtonImage = image.load("Images/UI/Buttons/SmallButtonPreset.png").convert_alpha()
@@ -444,48 +444,75 @@ class BuildMenu():
         cls.buildGhost = None
         
     @classmethod
+    def getDragPlacements(cls, factory):
+        positions, _, _, _, _ = cls.findDragPositions(xfirst = cls.dragxfirst)
+
+        if not positions:
+            return []
+
+        if len(positions) == 1:
+            flip = (cls.buildingFlip[1], cls.buildingFlip[0])
+
+            return [(positions[0], cls.buildingRotation, flip, cls.transportBent)]
+
+        pathDirections = [_directionBetween(positions[i], positions[i + 1]) for i in range(len(positions) - 1)]
+
+        startDirection = suggestDragEndpointDirection(factory, cls.buildingComponent, positions, atStart = True) or pathDirections[0]
+        endDirection = suggestDragEndpointDirection(factory, cls.buildingComponent, positions, atStart = False) or pathDirections[-1]
+
+        placements = []
+
+        for i, pos in enumerate(positions):
+            incoming = (pathDirections[i - 1] if i > 0 else startDirection)
+
+            outgoing = (pathDirections[i] if i < len(positions) - 1 else endDirection)
+
+            angle = (outgoing.value - incoming.value) % 360
+
+            if angle == 0:
+                flip = (False, False)
+                bent = False
+
+            elif angle == 90:
+                flip = (False, False)
+                bent = True
+
+            elif angle == 270:
+                flip = ((False, True) if incoming in (fac.Directions.North, fac.Directions.South) else (True, False))
+                bent = True
+
+            placements.append((pos, incoming, flip, bent))
+
+        return placements
+        
+    @classmethod
     def updateBuildDrag(cls, factory, pos):
         cls.finalDragPosition = dec.screenToWorld(pos)
-        
+
         cls.destroyGhosts()
-    
-        positions, dx, directionx, dy, directiony = cls.findDragPositions(xfirst = cls.dragxfirst)
-        
-        if 0 < dx < 2 and dy == 0:
+
+        dx = abs(cls.finalDragPosition[0] - cls.initialDragPosition[0])
+        dy = abs(cls.finalDragPosition[1] - cls.initialDragPosition[1])
+
+        if dx == 1 and dy == 0:
             cls.dragxfirst = True
-        elif 0 < dy < 2 and dx == 0:
+
+        elif dy == 1 and dx == 0:
             cls.dragxfirst = False
-            
-        xfirst = cls.dragxfirst
-        
-        flipCondition = lambda: (((directionx is fac.Directions.East and directiony is fac.Directions.North) or (directionx is fac.Directions.West and directiony is fac.Directions.South)) and i <= dx and dx != 0) if xfirst else (((directionx is fac.Directions.West and directiony is fac.Directions.North) or (directionx is fac.Directions.East and directiony is fac.Directions.South)) and i <= dy and dy != 0)
-        directionCondition = lambda: i <= dx and dx != 0 if xfirst else dx != 0 and (dy == 0 or i > dy)
-        bentCondition = lambda: i == dx and dx != 0 and dy != 0 if xfirst else i == dy and dx != 0 and dy != 0
-        
-        makeRed = False
-        
-        for i, pos in enumerate(positions):
-            if flipCondition():
-                cls.buildFlip(directionx if xfirst else directiony)
-            
-            cls.createGhost(cls.buildingComponentDict, pos,
-                           directionx if directionCondition() else directiony,
-                           cls.buildingFlip, bent = bentCondition())
-            
-            if flipCondition():
-                cls.buildFlip(directionx if xfirst else directiony)
-                
-            makeRed = makeRed or pos in dec.occupiedSpaces
-        
-        if makeRed:
-            for ghost in cls.dragGhosts:
-                ghost.image = ghost.redImage
-        else:
-            for ghost in cls.dragGhosts:
-                ghost.image = ghost.normalImage
-        
-        cls.validDrag = not makeRed
-        
+
+        placements = cls.getDragPlacements(factory)
+
+        cls.validDrag = not any(pos in dec.occupiedSpaces for pos, _, _, _ in placements)
+
+        for worldPos, orientation, flip, bent in placements:
+            # reverse flip for ghost rendering
+            ghostFlip = (flip[1], flip[0])
+
+            cls.createGhost(cls.buildingComponentDict, worldPos, orientation, ghostFlip, bent)
+
+        for ghost in cls.dragGhosts:
+            ghost.image = (ghost.normalImage if cls.validDrag else ghost.redImage)
+
         if cls.buildGhost is not None:
             cls.buildGhost.destroy()
             cls.buildGhost = None
@@ -493,27 +520,13 @@ class BuildMenu():
     @classmethod
     def endBuildDrag(cls, factory):
         cls.destroyGhosts()
-        
+
+        if cls.validDrag:
+            placements = cls.getDragPlacements(factory)
+
+            if all(pos not in dec.occupiedSpaces for pos, _, _, _ in placements):
+                for worldPos, orientation, flip, bent in placements:
+                    placeComponent(factory, cls.buildingComponent, worldPos, orientation, flip, bent)
+
         cls.buildUpdateGhost(cls.buildingComponentDict)
-        
-        if not cls.validDrag: return
-        
-        positions, dx, directionx, dy, directiony = cls.findDragPositions(xfirst = cls.dragxfirst)
-            
-        xfirst = cls.dragxfirst
-        
-        flipCondition = lambda: (((directionx is fac.Directions.East and directiony is fac.Directions.North) or (directionx is fac.Directions.West and directiony is fac.Directions.South)) and i <= dx and dx != 0) if xfirst else (((directionx is fac.Directions.West and directiony is fac.Directions.North) or (directionx is fac.Directions.East and directiony is fac.Directions.South)) and i <= dy and dy != 0)
-        directionCondition = lambda: i <= dx and dx != 0 if xfirst else dx != 0 and (dy == 0 or i > dy)
-        bentCondition = lambda: i == dx and dx != 0 and dy != 0 if xfirst else i == dy and dx != 0 and dy != 0
-        
-        for i, pos in enumerate(positions):
-            if flipCondition():
-                cls.buildFlip(directionx if xfirst else directiony)
-                
-            placeComponent(factory, cls.buildingComponent, pos,
-                           directionx if directionCondition() else directiony,
-                           (cls.buildingFlip[1], cls.buildingFlip[0]), bent = bentCondition())
-            
-            if flipCondition():
-                cls.buildFlip(directionx if xfirst else directiony)
         
