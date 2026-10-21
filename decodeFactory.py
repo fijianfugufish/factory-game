@@ -38,7 +38,7 @@ visibleComponentsAt: dict[tuple[int, int], int] = {}
 _BasicDrillFrames = [image.load(f"Images/Producer/Drill/Drill{i}.png").convert_alpha() for i in range(1, 7)]
 
 #* machines
-_BasicFurnaceFrames = [image.load(f"Images/Machine/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
+_BasicFurnaceFrames    = [image.load(f"Images/Machine/Furnace/Furnace{i}.png").convert_alpha() for i in range(1, 7)]
 _AdvancedFurnaceFrames = [image.load(f"Images/Machine/Furnace/AdvancedFurnace{i}.png").convert_alpha() for i in range(1, 7)]
 
 _BasicPressFrames = [image.load(f"Images/Machine/Press/Press{i}.png").convert_alpha() for i in range(1, 12)]
@@ -47,15 +47,15 @@ _BasicAssemblerFrames = [image.load(f"Images/Machine/Assembler/Assembler{i}.png"
 
 _BasicExtruderFrames = [image.load(f"Images/Machine/Extruder/Extruder{i}.png").convert_alpha() for i in range(1, 6)]
 
-_BasicCutterFrames = [image.load(f"Images/Machine/Cutter/Cutter{i}.png").convert_alpha() for i in range(1, 31)]
+_BasicCutterFrames    = [image.load(f"Images/Machine/Cutter/Cutter{i}.png").convert_alpha() for i in range(1, 31)]
 _AdvancedCutterFrames = [image.load(f"Images/Machine/Cutter/AdvancedCutter{i}.png").convert_alpha() for i in range(1, 31)]
 
 #* inventories
 _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
 
 #* transports
-_BasicConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
-_BasicConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
+_BasicConveyorStraightFrames    = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/ConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
+_BasicConveyorTurnFrames        = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 _AdvancedConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/AdvancedConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
 _AdvancedConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/AdvancedConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
@@ -64,32 +64,32 @@ _FourWayDistributor = image.load(f"Images/Router/FourWayDistributor.png").conver
 _TwoWayDistributor  = image.load(f"Images/Router/TwoWayDistributor.png").convert_alpha()
 
 #* items
-_CoalSprite    = image.load("Images/Item/Ore/Coal.png").convert_alpha()
-_IronOreSprite = image.load("Images/Item/Ore/IronOre.png").convert_alpha()
-_CopperOreSprite = image.load("Images/Item/Ore/CopperOre.png").convert_alpha()
+_CoalSprite        = image.load("Images/Item/Ore/Coal.png").convert_alpha()
+_IronOreSprite     = image.load("Images/Item/Ore/IronOre.png").convert_alpha()
+_CopperOreSprite   = image.load("Images/Item/Ore/CopperOre.png").convert_alpha()
 _TitaniumOreSprite = image.load("Images/Item/Ore/TitaniumOre.png").convert_alpha()
-_UraniumOreSprite = image.load("Images/Item/Ore/UraniumOre.png").convert_alpha()
+_UraniumOreSprite  = image.load("Images/Item/Ore/UraniumOre.png").convert_alpha()
 
-_SteelIngotSprite = image.load("Images/Item/Ingot/SteelIngot.png").convert_alpha()
-_IronIngotSprite = image.load("Images/Item/Ingot/IronIngot.png").convert_alpha()
-_CopperIngotSprite = image.load("Images/Item/Ingot/CopperIngot.png").convert_alpha()
+_SteelIngotSprite    = image.load("Images/Item/Ingot/SteelIngot.png").convert_alpha()
+_IronIngotSprite     = image.load("Images/Item/Ingot/IronIngot.png").convert_alpha()
+_CopperIngotSprite   = image.load("Images/Item/Ingot/CopperIngot.png").convert_alpha()
 _TitaniumIngotSprite = image.load("Images/Item/Ingot/TitaniumIngot.png").convert_alpha()
 
-_SteelPlateSprite = image.load("Images/Item/Plate/SteelPlate.png").convert_alpha()
-_IronPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
-_TitaniumPlateSprite = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
+_SteelPlateSprite      = image.load("Images/Item/Plate/SteelPlate.png").convert_alpha()
+_IronPlateSprite       = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
+_TitaniumPlateSprite   = image.load("Images/Item/Plate/IronPlate.png").convert_alpha()
 _ReinforcedPlateSprite = image.load("Images/Item/Plate/ReinforcedPlate.png").convert_alpha()
 
-_IronRodSprite = image.load("Images/Item/Rod/IronRod.png").convert_alpha()
-_SteelRodSprite = image.load("Images/Item/Rod/SteelRod.png").convert_alpha()
+_IronRodSprite     = image.load("Images/Item/Rod/IronRod.png").convert_alpha()
+_SteelRodSprite    = image.load("Images/Item/Rod/SteelRod.png").convert_alpha()
 _TitaniumRodSprite = image.load("Images/Item/Rod/TitaniumRod.png").convert_alpha()
-_UraniumRodSprite = image.load("Images/Item/Rod/UraniumRod.png").convert_alpha()
+_UraniumRodSprite  = image.load("Images/Item/Rod/UraniumRod.png").convert_alpha()
 
 _SteelFrameSprite = image.load("Images/Item/Frame/Frame.png").convert_alpha()
 
-_IronGearSprite = image.load("Images/Item/Gear/IronGear.png").convert_alpha()
+_IronGearSprite   = image.load("Images/Item/Gear/IronGear.png").convert_alpha()
 _IronSpringSprite = image.load("Images/Item/Spring/IronSpring.png").convert_alpha()
-_IronScrewSprite = image.load("Images/Item/Screw/IronScrew.png").convert_alpha()
+_IronScrewSprite  = image.load("Images/Item/Screw/IronScrew.png").convert_alpha()
 
 _SimpleMechanicPartsSprite = image.load("Images/Item/MechanicParts/SimpleMechanicParts.png").convert_alpha()
 

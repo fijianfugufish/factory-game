@@ -626,14 +626,7 @@ def _checkAndConnectComponent(factory: fac.Factory, componentid: int, transporti
     }
 
     for x, y, side, portType in componentPorts:
-        x, y, side = _transformPort(
-            x,
-            y,
-            side,
-            component.size,
-            component.rotation,
-            component.flipped
-        )
+        x, y, side = _transformPort(x, y, side, component.size, component.rotation, component.flipped)
 
         componentPortPos = (
             component.position[0] + x,

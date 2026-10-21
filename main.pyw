@@ -3,6 +3,7 @@ import factory as fac
 from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld
 from encodeFactory import placeComponent, deleteAt, changeRecipeAt
 from buildSystem import BuildMenu
+from worldGeneration import updateVisibleChunks, updateChunkPoses
 import pygameui
 
 cursor = transform.scale(image.load(f"Images/Mouse/Cursor.png").convert_alpha(), (0.25 * 64, 0.25 * 64))
@@ -96,6 +97,9 @@ def main():
         mainFactory.step(dt)
         
         decodeAndRender(mainFactory, dt = dt, moved = moved)
+        
+        updateVisibleChunks()
+        updateChunkPoses()
         
         BuildMenu.buildShowGhost()
         
