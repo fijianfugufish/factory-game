@@ -47,7 +47,7 @@ class Chunk(pygameui.Sprite):
 
         super().__init__(screenPos[0], screenPos[1], w = size, h = size, image = chunkImage)
 
-        self.z = -1
+        self.z = -2
 
 def getTileType(x, y, seed = seed):  
     # note for me so im not intimidated by perlin noise numbers
