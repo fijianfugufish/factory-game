@@ -1,6 +1,7 @@
 from pygame import *
 import factory as fac
 import decodeFactory as dec
+from worldGeneration import getTileType, seed
 
 def placeComponent(factory: fac.Factory, component, worldPos: tuple[int, int], orientation: fac.Directions, flip: tuple[bool, bool], bent = False):
     """validates and encodes components based on how they were placed"""
@@ -678,6 +679,33 @@ def _validateAndEncodeComponent(factory: fac.Factory, component, worldPos: tuple
     if isinstance(component, fac.Producer):
         componentid = factory.addProducer(component)
         factory.updateProducer(componentid, position = worldPos, rotation = orientation, flipped = flip)
+        
+        # for producers, check what ores are beneath them then
+        ores = {}
+        
+        for y in range(height):
+            for x in range(width):
+                pos = (worldPos[0] + x, worldPos[1] + y)
+                
+                tile = getTileType(*pos, seed) 
+                
+                if ores.get(tile) is None:
+                    ores[tile] = 1
+                else:
+                    ores[tile] += 1
+        
+        material = None
+        efficiency = 1
+        
+        for ore, amount in ores.items():
+            if fac.Items.__members__.get(ore) is None: continue
+            
+            material = ore if amount >= efficiency and fac.Items[ore] in component.canHarvest else material
+        
+        efficiency = ores[ore]
+        
+        if material is not None :
+            factory.updateProducer(componentid, material = fac.Items[material], efficiency = efficiency)
 
     elif isinstance(component, fac.Machine):
         componentid = factory.addMachine(component)

@@ -52,10 +52,6 @@ def main():
                     BuildMenu.buildRotateClockwise()
                 elif e.key == K_f:
                     BuildMenu.buildFlip()
-                elif e.key == K_p:
-                    # temporary coal drill
-                    placeComponent(mainFactory, fac.drill2, screenToWorld((mousex, mousey)), fac.Directions.North, (False, False))
-                    decodeAndRender(mainFactory, dt = dt, forceRender = True)
             
             if not pygameui.Button.handleAllButtons((mousex, mousey), e.type):
                 if e.type == MOUSEBUTTONUP:

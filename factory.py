@@ -351,20 +351,10 @@ advancedCutter = Machine(
 
 basicDrill = Producer(
     type = "BasicDrill",
-    material = Items.IronOre,
+    material = None,
     canHarvest = [Items.Coal, Items.IronOre],
-    speed = 1,
+    speed = 0.5,
     efficiency = 1,
-    maxItems = 5,
-    size = (2, 2)
-)
-
-drill2 = Producer(
-    type = "BasicDrill",
-    material = Items.Coal,
-    canHarvest = [Items.Coal],
-    speed = 4,
-    efficiency = 5,
     maxItems = 5,
     size = (2, 2)
 )
@@ -418,17 +408,19 @@ class Factory():
     
     def updateProducer(self, producerid: int, *,
                        material: Items = _MISSING,
+                       efficiency: Items = _MISSING,
                        outputids: list[int] = _MISSING,
                        position: tuple[int, int] = _MISSING,
                        rotation: Directions = _MISSING,
                        flipped: tuple[bool, bool] = _MISSING):
         producer = self.producers[producerid]
         
-        if outputids is not _MISSING: producer.output = outputids
-        if position  is not _MISSING: producer.position = position
-        if rotation  is not _MISSING: producer.rotation = rotation
-        if flipped   is not _MISSING: producer.flipped = flipped
-        if material  is not _MISSING: producer.material = material
+        if outputids  is not _MISSING: producer.output = outputids
+        if position   is not _MISSING: producer.position = position
+        if rotation   is not _MISSING: producer.rotation = rotation
+        if flipped    is not _MISSING: producer.flipped = flipped
+        if material   is not _MISSING: producer.material = material
+        if efficiency is not _MISSING: producer.efficiency = efficiency
     
     def destroyProducer(self, producerid: int):
         del self.producers[producerid]

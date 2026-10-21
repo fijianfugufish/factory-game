@@ -20,7 +20,7 @@ _IronOreSprite = image.load("Images/Terrain/Ore/IronOre.png").convert()
 
 TILE_IMAGES = {
     "Dirt": transform.scale(_DirtSprite, (TILESIZE, TILESIZE)),
-    "CoalOre": transform.scale(_CoalOreSprite, (TILESIZE, TILESIZE)),
+    "Coal": transform.scale(_CoalOreSprite, (TILESIZE, TILESIZE)),
     "IronOre": transform.scale(_IronOreSprite, (TILESIZE, TILESIZE))
 }
 
@@ -64,7 +64,7 @@ def getTileType(x, y, seed = seed):
     coalNoise = pnoise2(x / 18, y / 18, octaves = 3, persistence = 0.5, lacunarity = 2, base = seed + 200)
 
     if coalNoise > 0.225:
-        return "CoalOre"
+        return "Coal"
 
     return "Dirt"
 
