@@ -202,8 +202,7 @@ class Transport():
     itemids: list[int] = field(default_factory = list)
     lastDestroyedid: int = 0
     id: int = 0
-    # input: int | None   <- may be needed if conveyors can connect into other conveyors
-    # output: int | None  <- 
+    output: int | None = None
 
 @dataclass
 class Inventory():
@@ -353,7 +352,7 @@ basicDrill = Producer(
     type = "BasicDrill",
     material = None,
     canHarvest = [Items.Coal, Items.IronOre],
-    speed = 0.25,
+    speed = 4,
     efficiency = 1,
     maxItems = 5,
     size = (2, 2)
@@ -470,12 +469,11 @@ class Factory():
         return transport.id
     
     def updateTransport(self, transportid: int, *,
-                        #inputids: list[int] = _MISSING, outputid: int = _MISSING,
+                        outputid: int = _MISSING,
                         length: int = _MISSING):
         transport = self.transports[transportid]
         
-        # if inputids is not _MISSING: transport.input = inputids
-        # if outputid is not _MISSING: transport.output = outputid
+        if outputid is not _MISSING: transport.output = outputid
         if length   is not _MISSING: transport.length = length
     
     def calculateTransportLength(self, transportid: int) -> int:
@@ -1248,6 +1246,35 @@ class Factory():
         
         #todo some routers should be conditional. make conditions work
         #todo also some routers may need to only pass certain inputs to certain outputs
+        
+        # resolve transport i/o
+
+        for id, firstTransport in self.transports.items():
+            if not firstTransport.items:
+                continue
+
+            if firstTransport.output not in self.transports:
+                continue
+
+            transport = self.transports[firstTransport.output]
+
+            if firstTransport.items[0][1] / 2 < firstTransport.length:
+                continue
+
+            if transport.items and transport.items[-1][1] < 1:
+                continue
+
+            itemToTransfer = firstTransport.items[0][0]
+
+            firstTransport.lastDestroyedid = firstTransport.itemids[0]
+
+            del firstTransport.items[0]
+            del firstTransport.itemids[0]
+
+            transport.items.append([itemToTransfer, 0])
+            transport.itemids.append(self.nextid)
+
+            self.nextid += 1
                         
     def step(self, dt: float):
         """main factory update function"""
@@ -1259,7 +1286,6 @@ class Factory():
         self._stepConnections()
         
         # todo fix known edgecases
-        # conveyor cannot loop into itself
         # large step in dt could overrun producer / furnace timers and stop it from being produced for one time
     
     @staticmethod

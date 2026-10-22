@@ -68,6 +68,8 @@ def _deleteTransportAt(factory, worldPos):
 
         dec._decodeFactoryComponent(factory, transportid)
         _checkTransportConnections(factory, transportid)
+    
+    _refreshTransportOutputs(factory)
 
 def _deleteComponent(factory: fac.Factory, worldPos):
     componentid = dec.visibleComponentsAt.get(worldPos)
@@ -127,6 +129,39 @@ def _checkTransportConnections(factory, transportid):
     end = transport.turns[-1][0]
     pos = (end[0] + dx, end[1] + dy)
     _checkComponentAt(factory, transportid, pos)
+
+def _refreshTransportOutputs(factory):
+    directionOffsets = {
+        fac.Directions.North: (0, -1),
+        fac.Directions.East: (1, 0),
+        fac.Directions.South: (0, 1),
+        fac.Directions.West: (-1, 0)
+    }
+
+    # map transport starting positions to their IDs
+    starts = {transport.turns[0][0]: transportid for transportid, transport in factory.transports.items() if transport.turns}
+
+    for transportid, transport in factory.transports.items():
+        transport.output = None
+
+        if not transport.turns:
+            continue
+
+        # find the position directly after this transport
+        dx, dy = directionOffsets[transport.finalDirection]
+        endx, endy = transport.turns[-1][0]
+
+        nextid = starts.get((endx + dx, endy + dy))
+
+        if nextid is None:
+            continue
+
+        other = factory.transports[nextid]
+
+        if other.initialDirection is not transport.finalDirection:
+            continue
+
+        transport.output = nextid
 
 def _checkComponentAt(factory, transportid, pos):
     componentid = dec.visibleComponentsAt.get(pos)
@@ -385,9 +420,11 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
         existing = factory.transports[transp]
         turns = existing.turns
 
-        if turns[-1][0] == pos and transport.type == existing.type and existing.finalDirection is orientation:
-            extendForward = True
+        if turns[-1][0] == pos and existing.finalDirection is orientation:
             id1 = transp
+
+            if transport.type == existing.type:
+                extendForward = True
 
             if len(turns) == 1:
                 shouldAddForward = True
@@ -405,9 +442,11 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
         existing = factory.transports[transp]
         turns = existing.turns
         
-        if turns[0][0] == pos and transport.type == existing.type and existing.initialDirection is bendDirection:
-            extendBackward = True
+        if turns[0][0] == pos and existing.initialDirection is bendDirection:
             id2 = transp
+
+            if transport.type == existing.type:
+                extendBackward = True
 
             if len(turns) == 1:
                 shouldAddBackward = True
@@ -417,7 +456,7 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
 
     resultTransportId = None
 
-    if extendBackward and extendForward:
+    if extendBackward and extendForward and id1 != id2:
         dec.destroyTransportSprites(id1)
         dec.destroyTransportSprites(id2)
 
@@ -430,6 +469,9 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
         transportToExtend = factory.transports[id2]
 
         if shouldAddBackward:
+            for item in transportToExtend.items:
+                item[1] += 2
+                
             turnDirection = bendDirection if bent else orientation
             transportToExtend.turns.insert(0, [worldPos, turnDirection])
             transportToExtend.initialDirection = orientation
@@ -467,8 +509,22 @@ def _validateAndEncodeTransport(factory: fac.Factory, transport,
         if bent:
             factory.changeTransportTurn(resultTransportId, [None, bendDirection], True)
     
+    # connect transports if thy differ in type
+    # todo if i add something like pipes, make sure that conveyors cannot transfer to pipes
+    if id1 == resultTransportId and id2 == resultTransportId:
+        factory.transports[resultTransportId].output = resultTransportId
+    else:
+        if id1 is not None and id1 != resultTransportId and id1 in factory.transports:
+            factory.transports[id1].output = resultTransportId
+
+        if id2 is not None and id2 != resultTransportId and id2 in factory.transports:
+            factory.transports[resultTransportId].output = id2
+    
     dec.visibleTransportsAt[worldPos] = resultTransportId
     dec.occupiedSpaces.add(worldPos)
+    
+    if extendBackward and extendForward and id1 != id2:
+        _refreshTransportOutputs(factory)
     
     _checkTransportConnections(factory, resultTransportId)
 

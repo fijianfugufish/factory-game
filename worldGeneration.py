@@ -61,7 +61,7 @@ def getTileType(x, y, seed = seed):
     if ironNoise > 0.25:
         return "IronOre"
 
-    coalNoise = pnoise2(x / 18, y / 18, octaves = 3, persistence = 0.5, lacunarity = 2, base = seed + 200)
+    coalNoise = pnoise2(x / 18, y / 18, octaves = 6, persistence = 0.5, lacunarity = 2, base = seed + 200)
 
     if coalNoise > 0.225:
         return "Coal"
