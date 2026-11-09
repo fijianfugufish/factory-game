@@ -29,6 +29,9 @@ def main():
     
     BuildMenu.init()
     
+    particleSys = pygameui.ParticleSystem()
+    particleSys.x, particleSys.y = (300, 300)
+    
     while gameRunning:
         # main game loop
         window.fill(bgColor)
@@ -38,7 +41,7 @@ def main():
         events = event.get()
         
         mousex, mousey = mouse.get_pos()
-        
+         
         for e in events:
             if e.type == QUIT:
                 gameRunning = False
@@ -52,13 +55,14 @@ def main():
                     BuildMenu.buildRotateClockwise()
                 elif e.key == K_f:
                     BuildMenu.buildFlip()
+                    
                 # temporary zoom logic
                 elif e.key == K_j:
                     if increaseTileSize():
                         updateTiles()
                         clearVisibleComponents()
                         decodeAndRender(mainFactory, moved = True, forceRender = True)
-                        
+                                     
                 elif e.key == K_k:
                     if decreaseTileSize():
                         updateTiles()
@@ -106,12 +110,14 @@ def main():
         
         decodeAndRender(mainFactory, dt = dt, moved = moved)
         
-        updateVisibleChunks(max(1, round(256 / getTileSize())))
+        updateVisibleChunks()
         updateChunkPoses()
         
         BuildMenu.buildShowGhost()
         
         drawAll(window, dt)
+        
+        particleSys.update(dt)
         
         window.blit(cursor, (mousex, mousey))
         

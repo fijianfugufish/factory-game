@@ -1,10 +1,13 @@
 from pygame import *
+from typing import Literal
+from random import uniform
+from math import sin, cos, radians
 
 font.init()
 
 defaultStyle = {
     "color": (200, 200, 200),
-    "outline": 1,
+    "outline": 0,
     "outlineColor": (0, 0, 0),
     "fontSize": 32,
     "font": "fonts/pixelfont.ttf",
@@ -19,6 +22,13 @@ noTexture = image.load("NoTexture.png").convert()
 
 def lighten(color, intensity):
     return tuple(min(255, int(c * intensity)) for c in color)
+
+def lerp(start, end, t):
+    return start + (end - start) * t
+
+def lerpColor(start, end, t):
+    t = max(0, min(1, t))
+    return tuple(int(lerp(s, e, t)) for s, e in zip(start, end))
 
 class UI():
     instances = []
@@ -84,7 +94,9 @@ class UI():
     def draw(self, window):
         if self.hidden: return
         
-        draw.rect(window, self.outlineColor, Rect(self.x - self.outline, self.y  - self.outline, self.w + self.outline * 2, self.h + self.outline * 2))
+        if self.outline > 0:
+            draw.rect(window, self.outlineColor, Rect(self.x - self.outline, self.y  - self.outline, self.w + self.outline * 2, self.h + self.outline * 2))
+        
         draw.rect(window, self.color, self.rect)
     
     @classmethod
@@ -173,8 +185,7 @@ class Button(UI):
         for i in cls.buttonInstances:
             returnValues.append(i.handleButton(mousePos, event))
         
-        return any(returnValues)
-    
+        return any(returnValues) 
         
 class Label(UI):
     def __init__(self, x, y, w, h, z = 0, text = "", style = defaultStyle, **kwargs):
@@ -540,3 +551,159 @@ class AnimatableSprite(Sprite):
     def updateAllAnimations(cls, dt):
         for i in cls.animationInstances:
             i.updateAnimation(dt)
+
+class Particle(UI):
+    def __init__(self, x, y, w, h, z = 0, style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, style = style, **kwargs)
+        
+        self.lifetime = 0
+        self.totalLifetime = 0
+        self.opacity = 0
+        
+        self.wStart = 0
+        self.hStart = 0
+        
+        self.xDirection = 0
+        self.yDirection = 0
+        
+        self.xOffset = 0
+        self.yOffset = 0
+        
+        self.speedOffset = 0
+    
+    def draw(self, window):
+        surface = Surface(self.rect.size, SRCALPHA)
+        surface.fill((*self.color, self.opacity))
+        window.blit(surface, self.rect.topleft)
+
+class ParticleSystem():
+    def __init__(self):
+        #* main settings
+        
+        self.maxLifetime = 3
+        self.maxLifetimeUncerainty = 1
+        
+        self.particleSpace: Literal["World", "Local"] = "World"
+        
+        #* over time settings
+        
+        self.startSize = 1
+        self.endSize = 0
+        self.sizeUncertainty = 0.7
+        
+        self.startOpacity = 255
+        self.endOpacity = 0
+        
+        self.startSpeed = 2
+        self.endSpeed = 5
+        self.speedUncertainty = 0.2
+        
+        self.startColor = (255, 255, 255)
+        self.endColor = (0, 0, 0)
+        self.colorUncertainty = 0.2
+        
+        # can add rotation later
+        
+        #* emission settings
+        
+        self.burstEmission = 10
+        self.burstUncertainty = 2
+        
+        self.emissionSpeed = 0.1
+        self.emissionSpeedUncertainty = 0
+        self.currentEmissionSpeed = self.emissionSpeed
+        
+        self.emissionType: Literal["Radial", "Area"] = "Area"
+        
+        self.emissionArea = (200, 200)
+        self.emissionAngle = 135
+        self.emissionArcWidth = 360
+        
+        self.particles: list[Particle] = []
+        self.timer = 0
+        
+        self.size = (10, 10)
+        self.x = 0
+        self.y = 0
+        
+        self.hidden = False
+    
+    def update(self, dt):
+        if self.hidden: return
+        
+        self.timer += dt 
+        
+        # create particles
+        if self.timer >= self.currentEmissionSpeed:
+            for _ in range(self.burstEmission):
+                particle = Particle(self.x, self.y, *self.size)
+                particle.color = self.startColor
+                
+                # add particle specific properties
+                lifetime = self.maxLifetime + uniform(-self.maxLifetimeUncerainty, self.maxLifetimeUncerainty)
+                particle.lifetime = lifetime
+                particle.totalLifetime = lifetime
+                
+                if self.emissionType == "Radial":
+                    angle = radians(self.emissionAngle + uniform(-self.emissionArcWidth / 2, self.emissionArcWidth / 2))
+                    
+                    particle.xDirection = sin(angle)
+                    particle.yDirection = cos(angle)
+                    
+                elif self.emissionType == "Area":
+                    angle = radians(uniform(-180, 180))
+                    
+                    particle.xDirection = sin(angle)
+                    particle.yDirection = cos(angle)
+                    
+                    particle.x = self.x + uniform(0, self.emissionArea[0])
+                    particle.y = self.y + uniform(0, self.emissionArea[1])
+                
+                particle.speedOffset = uniform(-self.speedUncertainty, self.speedUncertainty)
+                
+                size = max(0, self.startSize + uniform(-self.sizeUncertainty, self.sizeUncertainty))
+                
+                particle.wStart = size
+                particle.hStart = size
+                
+                particle.w *= size
+                particle.h *= size
+                
+                particle.color = self.startColor
+                particle.opacity = self.startOpacity
+                
+                self.particles.append(particle)
+            
+            self.timer = 0
+            self.currentEmissionSpeed = self.emissionSpeed + uniform(-self.emissionSpeedUncertainty, self.emissionSpeedUncertainty)
+        
+        # step particles
+        toRemove = []
+        
+        for particle in self.particles:
+            if particle.lifetime <= 0:
+                particle.destroy()
+                toRemove.append(particle)
+                continue
+                
+            particle.lifetime -= dt
+            
+            t = max(0, min(1, 1 - particle.lifetime / particle.totalLifetime))
+            
+            progress = 1 - particle.lifetime / particle.totalLifetime
+
+            speed = max(0, lerp(self.startSpeed, self.endSpeed, progress) + particle.speedOffset)
+
+            particle.x += particle.xDirection * speed * dt
+            particle.y += particle.yDirection * speed * dt
+            
+            particle.w = self.size[0] * lerp(particle.wStart, self.endSize, t)
+            particle.h = self.size[1] * lerp(particle.hStart, self.endSize, t)
+            
+            particle.color = lerpColor(self.startColor, self.endColor, t)
+            particle.opacity = int(lerp(self.startOpacity, self.endOpacity, t))
+        
+        for particle in toRemove:
+            self.particles.remove(particle)
+            
+                

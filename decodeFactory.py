@@ -774,7 +774,7 @@ def decreaseTileSize() -> bool:
     global TILESIZE
     
     if TILESIZE > 16:
-        TILESIZE -= 16
+        TILESIZE -= 8
         return True
     else:
         return False
@@ -785,7 +785,7 @@ def increaseTileSize() -> bool:
     global TILESIZE
     
     if TILESIZE < 64:
-        TILESIZE += 16
+        TILESIZE += 8
         return True
     else:
         return False
