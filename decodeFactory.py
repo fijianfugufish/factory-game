@@ -242,6 +242,8 @@ class Router(pygameui.Sprite):
 
 class Item(pygameui.Sprite):
     def __init__(self, x, y, item, **kwargs):
+        self.particles = None
+        
         super().__init__(x, y, w = 0.5 * TILESIZE, h = 0.5 * TILESIZE, **kwargs)
         
         match item:
@@ -255,6 +257,9 @@ class Item(pygameui.Sprite):
                 self.changeImage(_TitaniumOreSprite)
             case fac.Items.UraniumOre:
                 self.changeImage(_UraniumOreSprite)
+                
+                self.particles = pygameui.ParticleSystem()
+                self.particles.particleSpace = "World"
                 
             case fac.Items.SteelIngot:
                 self.changeImage(_SteelIngotSprite)
@@ -302,6 +307,36 @@ class Item(pygameui.Sprite):
         self.z = 0
         
         self.item = item
+    
+    def destroy(self):
+        pygameui.UI.instances.remove(self)
+        
+        if self.particles is not None:
+            self.particles.destroy()
+    
+    @property
+    def x(self):
+        return self._x
+    
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self.rect.x = value
+        
+        if self.particles is not None:
+            self.particles.x = value
+    
+    @property
+    def y(self):
+        return self._y
+    
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self.rect.y = value
+
+        if self.particles is not None:
+            self.particles.y = value
 
 def lerp(start, end, t):
     return start + (end - start) * t
@@ -850,6 +885,8 @@ def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = F
         
         for component in visibleSprites:
             component.x, component.y = worldToSreen(component.worldPos)
+        
+        pygameui.ParticleSystem.worldRelativeTo = (cameraPos[0] * TILESIZE, cameraPos[1] * TILESIZE)
     
     _renderVisibleItems(factory)
     

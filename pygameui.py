@@ -412,12 +412,9 @@ class Parent():
     @x.setter
     def x(self, value):
         self._x = value
-        
+
         for child, values in self.children.items():
-            child.x = values[0] + self.x
-            child.y = values[1] + self.y
-            child.z = values[2] + self.z
-            child.hidden = values[3] or self.hidden
+            child.x = values[0] + self.x + getattr(child, "xOffset", 0)
     
     @property
     def y(self):
@@ -426,9 +423,9 @@ class Parent():
     @y.setter
     def y(self, value):
         self._y = value
-        
+
         for child, values in self.children.items():
-            child.y = values[1] + self.y
+            child.y = values[1] + self.y + getattr(child, "yOffset", 0)
 
     @property
     def z(self):
@@ -569,21 +566,51 @@ class Particle(UI):
         self.xOffset = 0
         self.yOffset = 0
         
+        self.worldX = 0
+        self.worldY = 0
+        
         self.speedOffset = 0
+        
+        self.space = "Local"
     
     def draw(self, window):
+        if self.hidden:
+            return
+
         surface = Surface(self.rect.size, SRCALPHA)
         surface.fill((*self.color, self.opacity))
-        window.blit(surface, self.rect.topleft)
+
+        if self.space == "World":
+            cameraX, cameraY = ParticleSystem.worldRelativeTo
+
+            x = self.worldX - cameraX
+            y = self.worldY - cameraY
+
+        else:
+            x = self.x
+            y = self.y
+        
+        window.blit(surface, (x, y))
 
 class ParticleSystem():
+    instances = []
+    worldRelativeTo = (0, 0)
+        
     def __init__(self):
+        self._x = 0
+        self._y = 0
+        self._z = 0
+        self._hidden = False
+        
+        self.particles = Parent(self.x, self.y) 
+        self.activeParticles: list[Particle] = []
+        
         #* main settings
         
         self.maxLifetime = 3
         self.maxLifetimeUncerainty = 1
         
-        self.particleSpace: Literal["World", "Local"] = "World"
+        self.particleSpace: Literal["World", "Local"] = "Local" #todo figure out how to make world work with camera movement
         
         #* over time settings
         
@@ -594,39 +621,38 @@ class ParticleSystem():
         self.startOpacity = 255
         self.endOpacity = 0
         
-        self.startSpeed = 2
-        self.endSpeed = 5
-        self.speedUncertainty = 0.2
+        self.startSpeed = 5
+        self.endSpeed = 20
+        self.speedUncertainty = 10
         
-        self.startColor = (255, 255, 255)
+        self.startColor = (50, 255, 100)
         self.endColor = (0, 0, 0)
-        self.colorUncertainty = 0.2
+        self.colorUncertainty = 0.2 #todo implement
         
         # can add rotation later
         
         #* emission settings
         
-        self.burstEmission = 10
-        self.burstUncertainty = 2
+        self.burstEmission = 2
+        self.burstUncertainty = 1
         
-        self.emissionSpeed = 0.1
-        self.emissionSpeedUncertainty = 0
+        self.emissionSpeed = 0.5
+        self.emissionSpeedUncertainty = 0.2
         self.currentEmissionSpeed = self.emissionSpeed
         
         self.emissionType: Literal["Radial", "Area"] = "Area"
         
-        self.emissionArea = (200, 200)
+        self.emissionArea = (24, 24)
         self.emissionAngle = 135
         self.emissionArcWidth = 360
         
-        self.particles: list[Particle] = []
+        self.size = (5, 5)
+
         self.timer = 0
         
-        self.size = (10, 10)
-        self.x = 0
-        self.y = 0
+        self.destroying = False
         
-        self.hidden = False
+        ParticleSystem.instances.append(self)
     
     def update(self, dt):
         if self.hidden: return
@@ -634,9 +660,9 @@ class ParticleSystem():
         self.timer += dt 
         
         # create particles
-        if self.timer >= self.currentEmissionSpeed:
+        if not self.destroying and self.timer >= self.currentEmissionSpeed:
             for _ in range(self.burstEmission):
-                particle = Particle(self.x, self.y, *self.size)
+                particle = Particle(0, 0, *self.size)
                 particle.color = self.startColor
                 
                 # add particle specific properties
@@ -644,20 +670,14 @@ class ParticleSystem():
                 particle.lifetime = lifetime
                 particle.totalLifetime = lifetime
                 
-                if self.emissionType == "Radial":
-                    angle = radians(self.emissionAngle + uniform(-self.emissionArcWidth / 2, self.emissionArcWidth / 2))
+                angle = radians(self.emissionAngle + uniform(-self.emissionArcWidth / 2, self.emissionArcWidth / 2))
+                
+                particle.xDirection = sin(angle)
+                particle.yDirection = cos(angle)
                     
-                    particle.xDirection = sin(angle)
-                    particle.yDirection = cos(angle)
-                    
-                elif self.emissionType == "Area":
-                    angle = radians(uniform(-180, 180))
-                    
-                    particle.xDirection = sin(angle)
-                    particle.yDirection = cos(angle)
-                    
-                    particle.x = self.x + uniform(0, self.emissionArea[0])
-                    particle.y = self.y + uniform(0, self.emissionArea[1])
+                if self.emissionType == "Area":
+                    particle.x = uniform(0, self.emissionArea[0])
+                    particle.y = uniform(0, self.emissionArea[1])
                 
                 particle.speedOffset = uniform(-self.speedUncertainty, self.speedUncertainty)
                 
@@ -672,7 +692,16 @@ class ParticleSystem():
                 particle.color = self.startColor
                 particle.opacity = self.startOpacity
                 
-                self.particles.append(particle)
+                self.activeParticles.append(particle)
+                
+                particle.space = self.particleSpace
+
+                if particle.space == "Local":
+                    self.particles.addChild(particle)
+
+                else:
+                    particle.worldX = particle.x + self.x + ParticleSystem.worldRelativeTo[0]
+                    particle.worldY = particle.y + self.y + ParticleSystem.worldRelativeTo[1]
             
             self.timer = 0
             self.currentEmissionSpeed = self.emissionSpeed + uniform(-self.emissionSpeedUncertainty, self.emissionSpeedUncertainty)
@@ -680,7 +709,7 @@ class ParticleSystem():
         # step particles
         toRemove = []
         
-        for particle in self.particles:
+        for particle in self.activeParticles:
             if particle.lifetime <= 0:
                 particle.destroy()
                 toRemove.append(particle)
@@ -689,13 +718,19 @@ class ParticleSystem():
             particle.lifetime -= dt
             
             t = max(0, min(1, 1 - particle.lifetime / particle.totalLifetime))
-            
-            progress = 1 - particle.lifetime / particle.totalLifetime
 
-            speed = max(0, lerp(self.startSpeed, self.endSpeed, progress) + particle.speedOffset)
+            speed = max(0, lerp(self.startSpeed, self.endSpeed, t) + particle.speedOffset)
 
-            particle.x += particle.xDirection * speed * dt
-            particle.y += particle.yDirection * speed * dt
+            if particle.space == "Local":
+                particle.xOffset += particle.xDirection * speed * dt
+                particle.yOffset += particle.yDirection * speed * dt
+
+                particle.x = self.x + self.particles.children[particle][0] + particle.xOffset
+                particle.y = self.y + self.particles.children[particle][1] + particle.yOffset
+
+            else:
+                particle.worldX += particle.xDirection * speed * dt
+                particle.worldY += particle.yDirection * speed * dt
             
             particle.w = self.size[0] * lerp(particle.wStart, self.endSize, t)
             particle.h = self.size[1] * lerp(particle.hStart, self.endSize, t)
@@ -704,6 +739,55 @@ class ParticleSystem():
             particle.opacity = int(lerp(self.startOpacity, self.endOpacity, t))
         
         for particle in toRemove:
-            self.particles.remove(particle)
-            
+            if particle in self.particles.children:
+                self.particles.removeChild(particle)
+
+            self.activeParticles.remove(particle)
+
+        if self.destroying and not self.activeParticles:
+            ParticleSystem.instances.remove(self)
+    
+    def destroy(self):
+        self.destroying = True
+
+    @classmethod
+    def updateAll(cls, dt):
+        for i in cls.instances:
+            i.update(dt)
+    
+    @property
+    def x(self):
+        return self._x
+    
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self.particles.x = value
+    
+    @property
+    def y(self):
+        return self._y
+    
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self.particles.y = value
+
+    @property
+    def z(self):
+        return self._z
+    
+    @z.setter
+    def z(self, value):
+        self._z = value
+        self.particles.z = value
+    
+    @property
+    def hidden(self):
+        return self._hidden
+    
+    @hidden.setter
+    def hidden(self, value):
+        self._hidden = value
+        self.particles.hidden = value
                 

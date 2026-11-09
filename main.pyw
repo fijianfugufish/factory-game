@@ -1,6 +1,6 @@
 from pygame import *
 import factory as fac
-from decodeFactory import window, decodeAndRender, clearVisibleComponents, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld, increaseTileSize, decreaseTileSize, getTileSize
+from decodeFactory import window, decodeAndRender, clearVisibleComponents, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld, worldToSreen, increaseTileSize, decreaseTileSize, getTileSize
 from encodeFactory import placeComponent, deleteAt, changeRecipeAt
 from buildSystem import BuildMenu
 from worldGeneration import updateVisibleChunks, updateChunkPoses, updateTiles
@@ -11,6 +11,7 @@ cursor = transform.scale(image.load(f"Images/Mouse/Cursor.png").convert_alpha(),
 def drawAll(window, dt):
     pygameui.UI.drawAll(window)
     pygameui.AnimatableSprite.updateAllAnimations(dt)
+    pygameui.ParticleSystem.updateAll(dt)
 
 def main():
     clock = time.Clock()
@@ -28,9 +29,6 @@ def main():
     decodeAndRender(mainFactory, forceRender = True)
     
     BuildMenu.init()
-    
-    particleSys = pygameui.ParticleSystem()
-    particleSys.x, particleSys.y = (300, 300)
     
     while gameRunning:
         # main game loop
@@ -116,8 +114,6 @@ def main():
         BuildMenu.buildShowGhost()
         
         drawAll(window, dt)
-        
-        particleSys.update(dt)
         
         window.blit(cursor, (mousex, mousey))
         
