@@ -756,11 +756,9 @@ def _validateAndEncodeComponent(factory: fac.Factory, component, worldPos: tuple
         for ore, amount in ores.items():
             if fac.Items.__members__.get(ore) is None: continue
             
-            material = ore if amount >= efficiency and fac.Items[ore] in component.canHarvest else material
+            material, efficiency = (ore, amount) if amount >= efficiency and fac.Items[ore] in component.canHarvest else (material, efficiency)
         
-        efficiency = ores[ore]
-        
-        if material is not None :
+        if material is not None:
             factory.updateProducer(componentid, material = fac.Items[material], efficiency = efficiency)
 
     elif isinstance(component, fac.Machine):

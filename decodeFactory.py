@@ -13,6 +13,8 @@ winx, winy = window.get_size()
 # must import after display initialisation due to pygames convert() requiring it
 import pygameui
 
+TILESIZE = 64
+
 _transportFrameSync = 0
 
 lastCameraPos = [0, 0]
@@ -49,6 +51,7 @@ _BasicExtruderFrames = [image.load(f"Images/Machine/Extruder/Extruder{i}.png").c
 
 _BasicCutterFrames    = [image.load(f"Images/Machine/Cutter/Cutter{i}.png").convert_alpha() for i in range(1, 31)]
 _AdvancedCutterFrames = [image.load(f"Images/Machine/Cutter/AdvancedCutter{i}.png").convert_alpha() for i in range(1, 31)]
+_SuperCutterFrames = [image.load(f"Images/Machine/Cutter/SuperCutter{i}.png").convert_alpha() for i in range(1, 53)]
 
 #* inventories
 _BasicContainerSprite = image.load("Images/Inventory/Container/BasicContainer.png").convert_alpha()
@@ -58,6 +61,8 @@ _BasicConveyorStraightFrames    = [image.load(f"Images/Transport/Conveyorbelt/Co
 _BasicConveyorTurnFrames        = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/ConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 _AdvancedConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/AdvancedConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
 _AdvancedConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/AdvancedConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
+_SuperConveyorStraightFrames = [image.load(f"Images/Transport/Conveyorbelt/ConveyorStraight/SuperConveyorStraight{i}.png").convert_alpha() for i in range(1, 9)]
+_SuperConveyorTurnFrames     = [image.load(f"Images/Transport/Conveyorbelt/ConveyorTurn/SuperConveyorTurn{i}.png").convert_alpha() for i in range(1, 9)]
 
 #* routers
 _FourWayDistributor = image.load(f"Images/Router/FourWayDistributor.png").convert_alpha()
@@ -95,7 +100,7 @@ _SimpleMechanicPartsSprite = image.load("Images/Item/MechanicParts/SimpleMechani
 
 class Producer(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
-        super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
+        super().__init__(x, y, w = 2 * TILESIZE, h = 2 * TILESIZE, **kwargs)
         
         match type:
             case "BasicDrill":
@@ -114,7 +119,7 @@ class Producer(pygameui.AnimatableSprite):
 
 class Transport(pygameui.AnimatableSprite):    
     def __init__(self, x, y, id, worldPos, type, speed = 8, bent = False, **kwargs):
-        super().__init__(x, y, w = 1 * 64, h = 1 * 64, autoAnimate = False, **kwargs)
+        super().__init__(x, y, w = 1 * TILESIZE, h = 1 * TILESIZE, autoAnimate = False, **kwargs)
         
         match type:
             case "BasicConveyor":
@@ -135,6 +140,15 @@ class Transport(pygameui.AnimatableSprite):
                     self.addAnimation("supermove", *_AdvancedConveyorStraightFrames)
                     
                 self.currentAnimation = "supermove"
+            case "SuperConveyor":
+                if bent:
+                    self.changeImage(_SuperConveyorTurnFrames[0])
+                    self.addAnimation("superdupermove", *_SuperConveyorTurnFrames)
+                else:
+                    self.changeImage(_SuperConveyorStraightFrames[0])
+                    self.addAnimation("superdupermove", *_SuperConveyorStraightFrames)
+                    
+                self.currentAnimation = "superdupermove"
             case _:
                 raise ValueError(f"unknown transport type {type!r}")
         
@@ -147,7 +161,7 @@ class Transport(pygameui.AnimatableSprite):
         
 class Machine(pygameui.AnimatableSprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
-        super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
+        super().__init__(x, y, w = 2 * TILESIZE, h = 2 * TILESIZE, **kwargs)
         
         match type:
             case "BasicFurnace":
@@ -159,8 +173,8 @@ class Machine(pygameui.AnimatableSprite):
                 self.addAnimation("squish", *_BasicPressFrames)
                 self.startAnimation("squish", 10)
             case "BasicAssembler":
-                self.w = 3 * 64
-                self.h = 2 * 64
+                self.w = 3 * TILESIZE
+                self.h = 2 * TILESIZE
                 self.changeImage(_BasicAssemblerFrames[0])
                 self.addAnimation("assemble", *_BasicAssemblerFrames)
                 self.startAnimation("assemble", 10)
@@ -179,7 +193,11 @@ class Machine(pygameui.AnimatableSprite):
             case "AdvancedCutter":
                 self.changeImage(_AdvancedCutterFrames[0])
                 self.addAnimation("superslice", *_AdvancedCutterFrames)
-                self.startAnimation("superslice", 10)
+                self.startAnimation("superslice", 10)#
+            case "SuperCutter":
+                self.changeImage(_SuperCutterFrames[0])
+                self.addAnimation("superduperslice", *_SuperCutterFrames)
+                self.startAnimation("superduperslice", 100)
             case _:
                 raise ValueError(f"unknown machine type {type!r}")
             
@@ -190,7 +208,7 @@ class Machine(pygameui.AnimatableSprite):
 
 class Inventory(pygameui.Sprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
-        super().__init__(x, y, w = 2 * 64, h = 2 * 64, **kwargs)
+        super().__init__(x, y, w = 2 * TILESIZE, h = 2 * TILESIZE, **kwargs)
         
         match type:
             case "BasicContainer":
@@ -205,14 +223,14 @@ class Inventory(pygameui.Sprite):
 
 class Router(pygameui.Sprite):
     def __init__(self, x, y, id, worldPos, type, **kwargs):
-        super().__init__(x, y, w = 1 * 64, h = 1 * 64, **kwargs)
+        super().__init__(x, y, w = 1 * TILESIZE, h = 1 * TILESIZE, **kwargs)
         
         match type:
             case "FourWayDistributor":
                 self.changeImage(_FourWayDistributor)
             case "TwoWayDistributor":
-                self.w = 2 * 64
-                self.h = 1 * 64
+                self.w = 2 * TILESIZE
+                self.h = 1 * TILESIZE
                 self.changeImage(_TwoWayDistributor)
             case _:
                 raise ValueError(f"unknown router type {type!r}")
@@ -224,7 +242,7 @@ class Router(pygameui.Sprite):
 
 class Item(pygameui.Sprite):
     def __init__(self, x, y, item, **kwargs):
-        super().__init__(x, y, w = 0.5 * 64, h = 0.5 * 64, **kwargs)
+        super().__init__(x, y, w = 0.5 * TILESIZE, h = 0.5 * TILESIZE, **kwargs)
         
         match item:
             case fac.Items.Coal:
@@ -289,22 +307,22 @@ def lerp(start, end, t):
     return start + (end - start) * t
 
 def worldToSreen(worldPos):
-    screenx = (worldPos[0] - cameraPos[0]) * 64
-    screeny = (worldPos[1] - cameraPos[1]) * 64
+    screenx = (worldPos[0] - cameraPos[0]) * TILESIZE
+    screeny = (worldPos[1] - cameraPos[1]) * TILESIZE
     return (screenx, screeny)
 
 def screenToWorld(screenPos):
-    worldx = round((screenPos[0] / 64) + cameraPos[0] - 0.5)
-    worldy = round((screenPos[1] / 64) + cameraPos[1] - 0.5)
+    worldx = round((screenPos[0] / TILESIZE) + cameraPos[0] - 0.5)
+    worldy = round((screenPos[1] / TILESIZE) + cameraPos[1] - 0.5)
     return (worldx, worldy)
 
 def isOffscreen(pos):
-    tolerance = (renderDistance + 1) * 64
+    tolerance = (renderDistance + 1) * TILESIZE
     
     # shift by one tile due to position refering to the upperleft of a sprite
-    if pos[0] < -tolerance - 64 or pos[0] > winx + tolerance - 64:
+    if pos[0] < -tolerance - TILESIZE or pos[0] > winx + tolerance - TILESIZE:
         return True
-    if pos[1] < -tolerance - 64 or pos[1] > winy + tolerance - 64:
+    if pos[1] < -tolerance - TILESIZE or pos[1] > winy + tolerance - TILESIZE:
         return True
     
     return False
@@ -749,7 +767,53 @@ def _findAllOnscreen(factory: fac.Factory):
                     pos = (router.position[0] + x, router.position[1] + y)
                     occupiedSpaces.discard(pos)
                     visibleComponentsAt.pop(pos, None)      
-                     
+       
+def decreaseTileSize() -> bool:
+    """returns true if tiles were resized"""
+    
+    global TILESIZE
+    
+    if TILESIZE > 16:
+        TILESIZE -= 16
+        return True
+    else:
+        return False
+
+def increaseTileSize() -> bool:
+    """returns true if tiles were resized"""
+        
+    global TILESIZE
+    
+    if TILESIZE < 64:
+        TILESIZE += 16
+        return True
+    else:
+        return False
+
+def getTileSize():
+    return TILESIZE
+
+def clearVisibleComponents():
+    sprites = (set(visibleSprites) | set(visibleItems.values()) | set(visibleTransportSprites.values()))
+
+    for sprite in sprites:
+        sprite.destroy()
+
+    visibleSprites.clear()
+    visibleItems.clear()
+    componentSprites.clear()
+    visibleTransportSprites.clear()
+
+    visibleTransports.clear()
+    visibleMachines.clear()
+    visibleProducers.clear()
+    visibleInventories.clear()
+    visibleRouters.clear()
+
+    visibleTransportsAt.clear()
+    visibleComponentsAt.clear()
+    occupiedSpaces.clear()
+
 def decodeAndRender(factory: fac.Factory, dt = 0, moved = False, forceRender = False):
     """render all factory components onscreen"""
     global cameraPos, lastCameraPos, renderDistance, _transportFrameSync

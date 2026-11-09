@@ -1,10 +1,11 @@
 from pygame import *
 import pygameui
 from noise import pnoise2
-from decodeFactory import cameraPos, lastCameraPos, worldToSreen, screenToWorld, winx, winy
+from decodeFactory import cameraPos, lastCameraPos, worldToSreen, screenToWorld, winx, winy, getTileSize
+from random import Random
+from functools import lru_cache
 
-CHUNKSIZE = 3
-TILESIZE = 64
+CHUNKSIZE = 8
 seed = 42
 
 chunks: dict[tuple[int, int], "Chunk"] = {}
@@ -12,17 +13,54 @@ chunks: dict[tuple[int, int], "Chunk"] = {}
 _lastVisibleChunk = None
 
 #* ground
-_DirtSprite = image.load("Images/Terrain/Ground/Dirt.png").convert()
+_DirtSprites = [image.load(f"Images/Terrain/Ground/Dirt{i}.png").convert() for i in range(1, 5)]
 
 #* ore
-_CoalOreSprite = image.load("Images/Terrain/Ore/CoalOre.png").convert()
-_IronOreSprite = image.load("Images/Terrain/Ore/IronOre.png").convert()
+_CoalOreSprites = [image.load(f"Images/Terrain/Ore/CoalOre{i}.png").convert() for i in range(1, 5)]
+_IronOreSprites = [image.load(f"Images/Terrain/Ore/IronOre{i}.png").convert() for i in range(1, 5)]
+_UraniumOreSprites = [image.load(f"Images/Terrain/Ore/UraniumOre{i}.png").convert() for i in range(1, 5)]
 
-TILE_IMAGES = {
-    "Dirt": transform.scale(_DirtSprite, (TILESIZE, TILESIZE)),
-    "Coal": transform.scale(_CoalOreSprite, (TILESIZE, TILESIZE)),
-    "IronOre": transform.scale(_IronOreSprite, (TILESIZE, TILESIZE))
-}
+TILE_IMAGES = {}
+
+def createTileImages():
+    sources = {
+        "Dirt": _DirtSprites,
+        "Coal": _CoalOreSprites,
+        "IronOre": _IronOreSprites,
+        "UraniumOre": _UraniumOreSprites,
+    }
+
+    size = getTileSize()
+
+    return {
+        name: [
+            [
+                transform.flip(transform.scale(sprite, (size, size)), flipX, flipY)
+                for flipX, flipY in ((False, False), (True, False), (False, True), (True, True))
+            ]
+            for sprite in sprites
+        ]
+        for name, sprites in sources.items()
+    }
+
+TILE_IMAGES = createTileImages()
+
+def clearChunks():
+    global _lastVisibleChunk
+
+    for chunk in chunks.values():
+        chunk.destroy()
+
+    chunks.clear()
+    _lastVisibleChunk = None
+
+def updateTiles():
+    global TILE_IMAGES
+    global CHUNKSIZE
+    
+    TILE_IMAGES = createTileImages()
+    
+    clearChunks()
 
 class Chunk(pygameui.Sprite):
     def __init__(self, chunkx, chunky, seed=seed):
@@ -30,7 +68,7 @@ class Chunk(pygameui.Sprite):
 
         self.worldPos = (chunkx * CHUNKSIZE, chunky * CHUNKSIZE)
 
-        size = CHUNKSIZE * TILESIZE
+        size = CHUNKSIZE * getTileSize()
 
         chunkImage = Surface((size, size)).convert()
 
@@ -40,8 +78,15 @@ class Chunk(pygameui.Sprite):
                 worldy = self.worldPos[1] + y
 
                 tileType = getTileType(worldx, worldy, seed)
+                
+                rng = Random(f"{worldx},{worldy}")
 
-                chunkImage.blit(TILE_IMAGES[tileType], (x * TILESIZE, y * TILESIZE))
+                variant = rng.randrange(4)
+                flip = rng.randrange(4)
+
+                tile = TILE_IMAGES[tileType][variant][flip]
+
+                chunkImage.blit(tile, (x * getTileSize(), y * getTileSize()))
 
         screenPos = worldToSreen(self.worldPos)
 
@@ -49,12 +94,14 @@ class Chunk(pygameui.Sprite):
 
         self.z = -2
 
+@lru_cache(maxsize = 100000)
 def getTileType(x, y, seed = seed):  
     # note for me so im not intimidated by perlin noise numbers
     # x / y divisor controls size of patch, the higher the bigger
     # octaves control 'complexity' of the patch
     # the xNoise > y controls how common it is, higher being rarer
-    # who even knows what the others do
+    # persistence sounds like smoothness, the lower the smoother
+    # nobody knows what lacunarity does maybe the higher the rougher
     
     ironNoise = pnoise2(x / 8, y / 8, octaves = 3, persistence = 0.5, lacunarity = 2, base = seed + 100)
 
@@ -63,8 +110,13 @@ def getTileType(x, y, seed = seed):
 
     coalNoise = pnoise2(x / 18, y / 18, octaves = 6, persistence = 0.5, lacunarity = 2, base = seed + 200)
 
-    if coalNoise > 0.225:
+    if coalNoise > 0.175:
         return "Coal"
+    
+    uraniumNoise = pnoise2(x / 18, y / 18, octaves = 6, persistence = 0.5, lacunarity = 2, base = seed + 300)
+
+    if uraniumNoise > 0.175:
+        return "UraniumOre"
 
     return "Dirt"
 

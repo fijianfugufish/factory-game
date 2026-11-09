@@ -269,16 +269,18 @@ basicConveyor = Transport(
     type = "BasicConveyor",
     speed = 2,
     length = 10,
-    # input = None,
-    # output = None,
 )
 
 advancedConveyor = Transport(
     type = "AdvancedConveyor",
     speed = 4,
     length = 10,
-    # input = None,
-    # output = None,
+)
+
+superConveyor = Transport(
+    type = "SuperConveyor",
+    speed = 8,
+    length = 10,
 )
 
 #* machines
@@ -346,12 +348,21 @@ advancedCutter = Machine(
     size = (2, 2)
 )
 
+superCutter = Machine(
+    type = "SuperCutter",
+    recipes = [ironGearRecipe, ironSpringRecipe, ironScrewRecipe],
+    progress = 0,
+    speedMultiplier = 4,
+    maxItems = 5,
+    size = (2, 2)
+)
+
 #* producers
 
 basicDrill = Producer(
     type = "BasicDrill",
     material = None,
-    canHarvest = [Items.Coal, Items.IronOre],
+    canHarvest = [Items.Coal, Items.IronOre, Items.UraniumOre],
     speed = 4,
     efficiency = 1,
     maxItems = 5,

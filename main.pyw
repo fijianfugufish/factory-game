@@ -1,9 +1,9 @@
 from pygame import *
 import factory as fac
-from decodeFactory import window, decodeAndRender, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld
+from decodeFactory import window, decodeAndRender, clearVisibleComponents, moveCameraUp, moveCameraDown, moveCameraLeft, moveCameraRight, screenToWorld, increaseTileSize, decreaseTileSize, getTileSize
 from encodeFactory import placeComponent, deleteAt, changeRecipeAt
 from buildSystem import BuildMenu
-from worldGeneration import updateVisibleChunks, updateChunkPoses
+from worldGeneration import updateVisibleChunks, updateChunkPoses, updateTiles
 import pygameui
 
 cursor = transform.scale(image.load(f"Images/Mouse/Cursor.png").convert_alpha(), (0.25 * 64, 0.25 * 64))
@@ -52,6 +52,18 @@ def main():
                     BuildMenu.buildRotateClockwise()
                 elif e.key == K_f:
                     BuildMenu.buildFlip()
+                # temporary zoom logic
+                elif e.key == K_j:
+                    if increaseTileSize():
+                        updateTiles()
+                        clearVisibleComponents()
+                        decodeAndRender(mainFactory, moved = True, forceRender = True)
+                        
+                elif e.key == K_k:
+                    if decreaseTileSize():
+                        updateTiles()
+                        clearVisibleComponents()
+                        decodeAndRender(mainFactory, moved = True, forceRender = True)
             
             if not pygameui.Button.handleAllButtons((mousex, mousey), e.type):
                 if e.type == MOUSEBUTTONUP:
@@ -94,7 +106,7 @@ def main():
         
         decodeAndRender(mainFactory, dt = dt, moved = moved)
         
-        updateVisibleChunks()
+        updateVisibleChunks(max(1, round(256 / getTileSize())))
         updateChunkPoses()
         
         BuildMenu.buildShowGhost()

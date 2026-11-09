@@ -69,6 +69,13 @@ _machines = {
         "price": [fac.Items.IronOre, 4],
         "component": fac.advancedCutter,
     },
+    "SuperCutter": {
+        "image": dec._SuperCutterFrames[0],
+        "displayName": "Laser Cutter",
+        "size": (2, 2),
+        "price": [fac.Items.IronOre, 4],
+        "component": fac.superCutter,
+    },
 }
 
 _transports = {
@@ -122,6 +129,21 @@ _transports = {
         "size": (1, 1),
         "price": [fac.Items.IronOre, 4],
         "component": fac.advancedConveyor,
+    },
+    "SuperConveyor": {
+        "image": dec._SuperConveyorStraightFrames[0],
+        "bentImage": dec._SuperConveyorTurnFrames[0],
+        "displayName": "Super Conveyor",
+        "size": (1, 1),
+        "price": [fac.Items.IronOre, 4],
+        "component": fac.superConveyor,
+    },
+    "SuperTurnConveyor": {
+        "image": dec._SuperConveyorTurnFrames[0],
+        "displayName": "Super Turn Conveyor",
+        "size": (1, 1),
+        "price": [fac.Items.IronOre, 4],
+        "component": fac.superConveyor,
     },
 }
 
@@ -302,7 +324,7 @@ class BuildMenu():
                 component = cls.buildGhost.component
             
         pos = dec.worldToSreen(cls.buildingPosition)
-        width, height = (component["size"][0] * 64, (component["size"][1] * 64))
+        width, height = (component["size"][0] * dec.getTileSize(), (component["size"][1] * dec.getTileSize()))
         
         if (cls.buildingRotation.value + 90) % 180 == 0:
             width, height = height, width
@@ -324,7 +346,7 @@ class BuildMenu():
     @classmethod
     def createGhost(cls, component, worldPos, orientation, flip, bent):
         pos = dec.worldToSreen(worldPos)
-        width, height = (component["size"][0] * 64, (component["size"][1] * 64))
+        width, height = (component["size"][0] * dec.getTileSize(), (component["size"][1] * dec.getTileSize()))
         
         if (orientation.value + 90) % 180 == 0:
             width, height = height, width
