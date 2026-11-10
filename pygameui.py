@@ -30,6 +30,9 @@ def lerpColor(start, end, t):
     t = max(0, min(1, t))
     return tuple(int(lerp(s, e, t)) for s, e in zip(start, end))
 
+def randomColorShift(color, uncertainty):
+    return tuple(min(255, max(0, int(c + uniform(-uncertainty, uncertainty)))) for c in color)
+
 class UI():
     instances = []
     
@@ -550,7 +553,7 @@ class AnimatableSprite(Sprite):
             i.updateAnimation(dt)
 
 class Particle(UI):
-    def __init__(self, x, y, w, h, z = 0, style = defaultStyle, **kwargs):
+    def __init__(self, x, y, w, h, z = 0, image = None, style = defaultStyle, **kwargs):
         super().__init__(x, y, w, h, z, style = style, **kwargs)
         
         self.lifetime = 0
@@ -559,6 +562,8 @@ class Particle(UI):
         
         self.wStart = 0
         self.hStart = 0
+        self.startColor = (0, 0, 0)
+        self.endColor = (0, 0, 0)
         
         self.xDirection = 0
         self.yDirection = 0
@@ -571,6 +576,8 @@ class Particle(UI):
         
         self.speedOffset = 0
         
+        self.image = image
+        
         self.space = "Local"
     
     def draw(self, window):
@@ -579,6 +586,16 @@ class Particle(UI):
 
         surface = Surface(self.rect.size, SRCALPHA)
         surface.fill((*self.color, self.opacity))
+        
+        if self.image is not None:
+            surface = transform.scale(self.image, self.rect.size).copy()
+            tint = Surface(surface.get_size(), SRCALPHA)
+            tint.fill((*self.color, 255))
+            surface.blit(tint, (0, 0), special_flags = BLEND_RGBA_MULT)
+            surface.set_alpha(self.opacity)
+        else:
+            surface = Surface(self.rect.size, SRCALPHA)
+            surface.fill((*self.color, self.opacity))
 
         if self.space == "World":
             cameraX, cameraY = ParticleSystem.worldRelativeTo
@@ -605,12 +622,17 @@ class ParticleSystem():
         self.particles = Parent(self.x, self.y) 
         self.activeParticles: list[Particle] = []
         
+        self.xOffset = 0
+        self.yOffset = 0
+        
         #* main settings
         
         self.maxLifetime = 3
         self.maxLifetimeUncerainty = 1
         
         self.particleSpace: Literal["World", "Local"] = "Local" #todo figure out how to make world work with camera movement
+        
+        self.particleImage = None
         
         #* over time settings
         
@@ -627,7 +649,8 @@ class ParticleSystem():
         
         self.startColor = (50, 255, 100)
         self.endColor = (0, 0, 0)
-        self.colorUncertainty = 0.2 #todo implement
+        self.startColorUncertainty = 50
+        self.endColorUncertainty = 20
         
         # can add rotation later
         
@@ -636,7 +659,7 @@ class ParticleSystem():
         self.burstEmission = 2
         self.burstUncertainty = 1
         
-        self.emissionSpeed = 0.5
+        self._emissionSpeed = 0.5
         self.emissionSpeedUncertainty = 0.2
         self.currentEmissionSpeed = self.emissionSpeed
         
@@ -662,7 +685,7 @@ class ParticleSystem():
         # create particles
         if not self.destroying and self.timer >= self.currentEmissionSpeed:
             for _ in range(self.burstEmission):
-                particle = Particle(0, 0, *self.size)
+                particle = Particle(0, 0, *self.size, image = self.particleImage)
                 particle.color = self.startColor
                 
                 # add particle specific properties
@@ -689,7 +712,8 @@ class ParticleSystem():
                 particle.w *= size
                 particle.h *= size
                 
-                particle.color = self.startColor
+                particle.startColor = randomColorShift(self.startColor, self.startColorUncertainty)
+                particle.endColor = randomColorShift(self.endColor, self.endColorUncertainty)
                 particle.opacity = self.startOpacity
                 
                 self.activeParticles.append(particle)
@@ -698,10 +722,9 @@ class ParticleSystem():
 
                 if particle.space == "Local":
                     self.particles.addChild(particle)
-
                 else:
-                    particle.worldX = particle.x + self.x + ParticleSystem.worldRelativeTo[0]
-                    particle.worldY = particle.y + self.y + ParticleSystem.worldRelativeTo[1]
+                    particle.worldX = particle.x + self.x + self.xOffset + ParticleSystem.worldRelativeTo[0]
+                    particle.worldY = particle.y + self.y + self.yOffset + ParticleSystem.worldRelativeTo[1]
             
             self.timer = 0
             self.currentEmissionSpeed = self.emissionSpeed + uniform(-self.emissionSpeedUncertainty, self.emissionSpeedUncertainty)
@@ -725,8 +748,8 @@ class ParticleSystem():
                 particle.xOffset += particle.xDirection * speed * dt
                 particle.yOffset += particle.yDirection * speed * dt
 
-                particle.x = self.x + self.particles.children[particle][0] + particle.xOffset
-                particle.y = self.y + self.particles.children[particle][1] + particle.yOffset
+                particle.x = self.x + self.particles.children[particle][0] + particle.xOffset + self.xOffset
+                particle.y = self.y + self.particles.children[particle][1] + particle.yOffset + self.yOffset
 
             else:
                 particle.worldX += particle.xDirection * speed * dt
@@ -735,7 +758,7 @@ class ParticleSystem():
             particle.w = self.size[0] * lerp(particle.wStart, self.endSize, t)
             particle.h = self.size[1] * lerp(particle.hStart, self.endSize, t)
             
-            particle.color = lerpColor(self.startColor, self.endColor, t)
+            particle.color = lerpColor(particle.startColor, particle.endColor, t)
             particle.opacity = int(lerp(self.startOpacity, self.endOpacity, t))
         
         for particle in toRemove:
@@ -790,4 +813,13 @@ class ParticleSystem():
     def hidden(self, value):
         self._hidden = value
         self.particles.hidden = value
+    
+    @property
+    def emissionSpeed(self):
+        return self._emissionSpeed
+    
+    @emissionSpeed.setter
+    def emissionSpeed(self, value):
+        self._emissionSpeed = value
+        self.currentEmissionSpeed = value
                 

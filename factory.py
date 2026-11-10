@@ -1042,6 +1042,12 @@ class Factory():
             # farthest length a moving item may go
             farthest = transport.length * 2
             
+            if transport.output in self.transports:
+                nextTransport = self.transports[transport.output]
+
+                if nextTransport.items:
+                    farthest = min(farthest, transport.length * 2 + nextTransport.items[-1][1] - 1)
+            
             for item in transport.items:
                 # move items
                 item[1] += transport.speed * dt
