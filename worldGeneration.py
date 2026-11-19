@@ -12,12 +12,12 @@ seed = 42
 chunks: dict[tuple[int, int], "Chunk"] = {}
 
 #* ground
-_DirtSprites = [image.load(f"Images/Terrain/Ground/Dirt{i}.png").convert() for i in range(1, 5)]
+_DirtSprites = [image.load(f"Images/Terrain/Ground/Dirt/Dirt{i}.png").convert() for i in range(1, 5)]
 
 #* ore
-_CoalOreSprites = [image.load(f"Images/Terrain/Ore/CoalOre{i}.png").convert() for i in range(1, 5)]
-_IronOreSprites = [image.load(f"Images/Terrain/Ore/IronOre{i}.png").convert() for i in range(1, 5)]
-_UraniumOreSprites = [image.load(f"Images/Terrain/Ore/UraniumOre{i}.png").convert() for i in range(1, 5)]
+_CoalOreSprites = [image.load(f"Images/Terrain/Ore/CoalOre/CoalOre{i}.png").convert() for i in range(1, 5)]
+_IronOreSprites = [image.load(f"Images/Terrain/Ore/IronOre/IronOre{i}.png").convert() for i in range(1, 5)]
+_UraniumOreSprites = [image.load(f"Images/Terrain/Ore/UraniumOre/UraniumOre{i}.png").convert() for i in range(1, 5)]
 
 def createTileImages():
     sources = {
