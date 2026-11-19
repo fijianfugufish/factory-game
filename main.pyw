@@ -8,14 +8,18 @@ import pygameui
 
 cursor = transform.scale(image.load(f"Images/Mouse/Cursor.png").convert_alpha(), (0.25 * 64, 0.25 * 64))
 
-def drawAll(window, dt):
+def drawAll(window, dt, frame):
     pygameui.UI.drawAll(window)
     pygameui.AnimatableSprite.updateAllAnimations(dt)
-    pygameui.ParticleSystem.updateAll(dt)
+    
+    if frame % 2 == 0: pygameui.ParticleSystem.updateAll(dt * 2)
+    
+    pygameui.ParticleSystem.drawAll(window)
 
 def main():
     clock = time.Clock()
     FPS = 30
+    frame = 0
     
     mouse.set_visible(False)
     
@@ -30,15 +34,22 @@ def main():
     
     BuildMenu.init()
     
+    reference = pygameui.Label(1305, 890, 0, 0, text = "0.3.1-pre-aplpha")
+    reference.font = font.Font("fonts/pixelfont.ttf", 14)
+    
     while gameRunning:
         # main game loop
         window.fill(bgColor)
                 
         dt = clock.tick(FPS) / 1000
         
+        frame += 1
+        
         events = event.get()
         
         mousex, mousey = mouse.get_pos()
+         
+        BuildMenu.buildShowGhost()
          
         for e in events:
             if e.type == QUIT:
@@ -111,9 +122,7 @@ def main():
         updateVisibleChunks()
         updateChunkPoses()
         
-        BuildMenu.buildShowGhost()
-        
-        drawAll(window, dt)
+        drawAll(window, dt, frame)
         
         window.blit(cursor, (mousex, mousey))
         

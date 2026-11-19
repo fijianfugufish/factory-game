@@ -1,7 +1,8 @@
 from pygame import *
 from typing import Literal
-from random import uniform
+from random import uniform, randint
 from math import sin, cos, radians
+from collections import OrderedDict
 
 font.init()
 
@@ -11,7 +12,7 @@ defaultStyle = {
     "outlineColor": (0, 0, 0),
     "fontSize": 32,
     "font": "fonts/pixelfont.ttf",
-    "textColor": (0, 255, 0),
+    "textColor": (0, 0, 0),
     "textPadx": 32,
     "textPady": 16,
     "darkeningAmount": 0.8,
@@ -27,8 +28,11 @@ def lerp(start, end, t):
     return start + (end - start) * t
 
 def lerpColor(start, end, t):
-    t = max(0, min(1, t))
-    return tuple(int(lerp(s, e, t)) for s, e in zip(start, end))
+    return (
+        int(start[0] + (end[0] - start[0]) * t),
+        int(start[1] + (end[1] - start[1]) * t),
+        int(start[2] + (end[2] - start[2]) * t)
+    )
 
 def randomColorShift(color, uncertainty):
     return tuple(min(255, max(0, int(c + uniform(-uncertainty, uncertainty)))) for c in color)
@@ -111,10 +115,14 @@ class UI():
 class Button(UI):
     buttonInstances = []
     
-    def __init__(self, x, y, w, h, z = 0, action = lambda: ..., style = defaultStyle, **kwargs):
+    def __init__(self, x, y, w, h, z = 0, 
+                 action = lambda: ..., hoverAction = lambda: ..., hoveredOffAction = lambda: ...,
+                 style = defaultStyle, **kwargs):
         super().__init__(x, y, w, h, z, style = style, **kwargs)
         
         self.action = action
+        self.hoverAction = hoverAction
+        self.hoveredOffAction = hoveredOffAction
         
         self.darkeningAmount = style["darkeningAmount"]
         self.lighteningAmount = style["lighteningAmount"]
@@ -129,6 +137,7 @@ class Button(UI):
     def onHover(self):
         self.color = lighten(self._OriginalColor, self.lighteningAmount)
         self.outlineColor = lighten(self._OriginalOutlineColor, self.lighteningAmount)
+        self.hoverAction()
         
     def onPress(self):
         self.color = lighten(self._OriginalColor, self.darkeningAmount)
@@ -137,6 +146,7 @@ class Button(UI):
     def resetColor(self):
         self.color = self._OriginalColor
         self.outlineColor = self._OriginalOutlineColor
+        self.hoveredOffAction()
     
     def onRelease(self):
         self.onHover()
@@ -209,8 +219,10 @@ class Label(UI):
         window.blit(self.font.render(self.text, False, self.textColor), (self.x + self.textPadx, self.y + self.textPady))
     
 class TextButton(Button, Label):
-    def __init__(self, x, y, w, h, z = 0, text = "", action = lambda: ..., style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, text = text, action = action, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, text = "",
+                 action = lambda: ..., hoverAction = lambda: ..., hoveredOffAction = lambda: ...,
+                 style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, text = text, action = action, hoverAction = hoverAction, hoveredOffAction = hoveredOffAction, style = style, **kwargs)
         
         self._OriginalTextColor = style["textColor"]
     
@@ -218,6 +230,7 @@ class TextButton(Button, Label):
         self.color = lighten(self._OriginalColor, self.lighteningAmount)
         self.outlineColor = lighten(self._OriginalOutlineColor, self.lighteningAmount)
         self.textColor = lighten(self._OriginalTextColor, self.lighteningAmount)
+        self.hoverAction()
         
     def onPress(self):
         self.color = lighten(self._OriginalColor, self.darkeningAmount)
@@ -228,6 +241,7 @@ class TextButton(Button, Label):
         self.color = self._OriginalColor
         self.outlineColor = self._OriginalOutlineColor
         self.textColor = self._OriginalTextColor
+        self.hoveredOffAction()
 
 class Image(UI):
     def __init__(self, x, y, w, h, z = 0, image = noTexture, style = defaultStyle, **kwargs):
@@ -304,8 +318,10 @@ class Image(UI):
         window.blit(self.image, (self.x, self.y))
     
 class ImageButton(Button, Image):
-    def __init__(self, x, y, w, h, z = 0, image = noTexture, action = lambda: ..., style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, z, image = image, action = action, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, image = noTexture,
+                 action = lambda: ..., hoverAction = lambda: ..., hoveredOffAction = lambda: ...,
+                 style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, image = image, action = action, hoverAction = hoverAction, hoveredOffAction = hoveredOffAction, style = style, **kwargs)
         
         self.lighteningAmount = (255 * self.lighteningAmount) - 255
         self.darkeningAmount *= 255
@@ -313,6 +329,7 @@ class ImageButton(Button, Image):
     def onHover(self):
         self.image = self._OriginalImage.copy()
         self.image.fill((self.lighteningAmount, self.lighteningAmount, self.lighteningAmount), special_flags = BLEND_RGB_ADD)
+        self.hoverAction()
         
     def onPress(self):
         self.image = self._OriginalImage.copy()
@@ -320,10 +337,13 @@ class ImageButton(Button, Image):
     
     def resetColor(self):
         self.image = self._OriginalImage
+        self.hoveredOffAction()
 
 class TextImageButton(Button, Label, Image):
-    def __init__(self, x, y, w, h, z = 0, text = "", image = noTexture, action = lambda: ..., style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, z, text = text, image = image, action = action, style = style, **kwargs)
+    def __init__(self, x, y, w, h, z = 0, text = "", image = noTexture,
+                 action = lambda: ..., hoverAction = lambda: ..., hoveredOffAction = lambda: ...,
+                 style = defaultStyle, **kwargs):
+        super().__init__(x, y, w, h, z, text = text, image = image, action = action, hoverAction = hoverAction, hoveredOffAction = hoveredOffAction, style = style, **kwargs)
         
         self._OriginalTextColor = style["textColor"]
         
@@ -334,6 +354,7 @@ class TextImageButton(Button, Label, Image):
         self.image = self._OriginalImage.copy()
         self.image.fill((self.lighteningAmount, self.lighteningAmount, self.lighteningAmount), special_flags = BLEND_RGB_ADD)
         self.textColor = lighten(self._OriginalTextColor, self.lighteningAmount)
+        self.hoverAction()
         
     def onPress(self):
         self.image = self._OriginalImage.copy()
@@ -343,6 +364,7 @@ class TextImageButton(Button, Label, Image):
     def resetColor(self):
         self.image = self._OriginalImage
         self.textColor = self._OriginalTextColor
+        self.hoveredOffAction()
         
     def draw(self, window):
         if self.hidden: return
@@ -552,74 +574,71 @@ class AnimatableSprite(Sprite):
         for i in cls.animationInstances:
             i.updateAnimation(dt)
 
-class Particle(UI):
-    def __init__(self, x, y, w, h, z = 0, image = None, style = defaultStyle, **kwargs):
-        super().__init__(x, y, w, h, z, style = style, **kwargs)
-        
-        self.lifetime = 0
-        self.totalLifetime = 0
-        self.opacity = 0
-        
-        self.wStart = 0
-        self.hStart = 0
-        self.startColor = (0, 0, 0)
-        self.endColor = (0, 0, 0)
-        
-        self.xDirection = 0
-        self.yDirection = 0
-        
-        self.xOffset = 0
-        self.yOffset = 0
-        
+class Particle():
+    __slots__ = (
+        "x", "y", "w", "h",
+        "worldX", "worldY",
+        "localX", "localY",
+        "xOffset", "yOffset",
+        "xDirection", "yDirection",
+        "speedOffset",
+        "lifetime", "totalLifetime",
+        "wStart", "hStart",
+        "startColor", "endColor",
+        "color", "opacity",
+        "image", "space"
+    )
+
+    def __init__(self, x, y, w, h, image = None):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+
         self.worldX = 0
         self.worldY = 0
-        
+
+        self.localX = 0
+        self.localY = 0
+
+        self.xOffset = 0
+        self.yOffset = 0
+
+        self.xDirection = 0
+        self.yDirection = 0
         self.speedOffset = 0
-        
+
+        self.lifetime = 0
+        self.totalLifetime = 0
+
+        self.wStart = 0
+        self.hStart = 0
+
+        self.startColor = (0, 0, 0)
+        self.endColor = (0, 0, 0)
+
+        self.color = (0, 0, 0)
+        self.opacity = 255
+
         self.image = image
-        
         self.space = "Local"
-    
-    def draw(self, window):
-        if self.hidden:
-            return
-
-        surface = Surface(self.rect.size, SRCALPHA)
-        surface.fill((*self.color, self.opacity))
-        
-        if self.image is not None:
-            surface = transform.scale(self.image, self.rect.size).copy()
-            tint = Surface(surface.get_size(), SRCALPHA)
-            tint.fill((*self.color, 255))
-            surface.blit(tint, (0, 0), special_flags = BLEND_RGBA_MULT)
-            surface.set_alpha(self.opacity)
-        else:
-            surface = Surface(self.rect.size, SRCALPHA)
-            surface.fill((*self.color, self.opacity))
-
-        if self.space == "World":
-            cameraX, cameraY = ParticleSystem.worldRelativeTo
-
-            x = self.worldX - cameraX
-            y = self.worldY - cameraY
-
-        else:
-            x = self.x
-            y = self.y
-        
-        window.blit(surface, (x, y))
 
 class ParticleSystem():
     instances = []
     worldRelativeTo = (0, 0)
+    
+    surfaceCache = OrderedDict()
+    maxCachedSurfaces = 1024
+    
+    solidCache = OrderedDict()
+    maxSolidCache = 4096
         
     def __init__(self):
-        self._x = 0
-        self._y = 0
-        self._z = 0
-        self._hidden = False
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.hidden = False
         
-        self.particles = Parent(self.x, self.y) 
         self.activeParticles: list[Particle] = []
         
         self.xOffset = 0
@@ -630,7 +649,7 @@ class ParticleSystem():
         self.maxLifetime = 3
         self.maxLifetimeUncerainty = 1
         
-        self.particleSpace: Literal["World", "Local"] = "Local" #todo figure out how to make world work with camera movement
+        self.particleSpace: Literal["World", "Local"] = "Local" 
         
         self.particleImage = None
         
@@ -684,7 +703,7 @@ class ParticleSystem():
         
         # create particles
         if not self.destroying and self.timer >= self.currentEmissionSpeed:
-            for _ in range(self.burstEmission):
+            for _ in range(self.burstEmission + randint(-self.burstUncertainty, self.burstUncertainty)):
                 particle = Particle(0, 0, *self.size, image = self.particleImage)
                 particle.color = self.startColor
                 
@@ -709,8 +728,8 @@ class ParticleSystem():
                 particle.wStart = size
                 particle.hStart = size
                 
-                particle.w *= size
-                particle.h *= size
+                particle.w = self.size[0] * size
+                particle.h = self.size[1] * size
                 
                 particle.startColor = randomColorShift(self.startColor, self.startColorUncertainty)
                 particle.endColor = randomColorShift(self.endColor, self.endColorUncertainty)
@@ -720,26 +739,25 @@ class ParticleSystem():
                 
                 particle.space = self.particleSpace
 
-                if particle.space == "Local":
-                    self.particles.addChild(particle)
-                else:
-                    particle.worldX = particle.x + self.x + self.xOffset + ParticleSystem.worldRelativeTo[0]
-                    particle.worldY = particle.y + self.y + self.yOffset + ParticleSystem.worldRelativeTo[1]
-            
+                particle.localX = particle.x
+                particle.localY = particle.y
+
+                if particle.space == "World":
+                    particle.worldX = (particle.localX + self.x + self.xOffset + ParticleSystem.worldRelativeTo[0])
+                    particle.worldY = (particle.localY + self.y + self.yOffset + ParticleSystem.worldRelativeTo[1])
+                
             self.timer = 0
             self.currentEmissionSpeed = self.emissionSpeed + uniform(-self.emissionSpeedUncertainty, self.emissionSpeedUncertainty)
         
         # step particles
-        toRemove = []
-        
+        alive = []
+
         for particle in self.activeParticles:
+            particle.lifetime -= dt
+
             if particle.lifetime <= 0:
-                particle.destroy()
-                toRemove.append(particle)
                 continue
                 
-            particle.lifetime -= dt
-            
             t = max(0, min(1, 1 - particle.lifetime / particle.totalLifetime))
 
             speed = max(0, lerp(self.startSpeed, self.endSpeed, t) + particle.speedOffset)
@@ -748,8 +766,8 @@ class ParticleSystem():
                 particle.xOffset += particle.xDirection * speed * dt
                 particle.yOffset += particle.yDirection * speed * dt
 
-                particle.x = self.x + self.particles.children[particle][0] + particle.xOffset + self.xOffset
-                particle.y = self.y + self.particles.children[particle][1] + particle.yOffset + self.yOffset
+                particle.x = (self.x + particle.localX + particle.xOffset + self.xOffset)
+                particle.y = (self.y + particle.localY + particle.yOffset + self.yOffset)
 
             else:
                 particle.worldX += particle.xDirection * speed * dt
@@ -761,58 +779,134 @@ class ParticleSystem():
             particle.color = lerpColor(particle.startColor, particle.endColor, t)
             particle.opacity = int(lerp(self.startOpacity, self.endOpacity, t))
         
-        for particle in toRemove:
-            if particle in self.particles.children:
-                self.particles.removeChild(particle)
+            alive.append(particle)
 
-            self.activeParticles.remove(particle)
-
+        self.activeParticles = alive
+        
         if self.destroying and not self.activeParticles:
             ParticleSystem.instances.remove(self)
     
     def destroy(self):
         self.destroying = True
+    
+    def draw(self, window):
+        if self.hidden:
+            return
+
+        cameraX, cameraY = ParticleSystem.worldRelativeTo
+        screenW, screenH = window.get_size()
+
+        getSolid = ParticleSystem.getSolidSurface
+        getImage = ParticleSystem.getSurface
+
+        blits = []
+
+        for particle in self.activeParticles:
+            if particle.opacity <= 0:
+                continue
+
+            w = max(1, int(particle.w))
+            h = max(1, int(particle.h))
+
+            if particle.space == "World":
+                x = int(particle.worldX - cameraX)
+                y = int(particle.worldY - cameraY)
+            else:
+                x = int(particle.x)
+                y = int(particle.y)
+
+            # offscreen culling
+            if (x + w <= 0 or y + h <= 0 or x >= screenW or y >= screenH):
+                continue
+
+            if particle.image is None:
+                surface = getSolid(w, h, particle.color, particle.opacity)
+            else:
+                surface = getImage(particle, w, h)
+
+            blits.append((surface, (x, y)))
+
+        if blits:
+            window.blits(blits, doreturn=False)
+
+    @classmethod
+    def getSurface(cls, particle, w, h):
+        # reduce colors
+        color = (
+            particle.color[0] // 32 * 32,
+            particle.color[1] // 32 * 32,
+            particle.color[2] // 32 * 32
+        )
+
+        opacity = particle.opacity // 32 * 32
+
+        key = (id(particle.image), w, h, color, opacity)
+
+        cache = cls.surfaceCache
+
+        surface = cache.get(key)
+
+        if surface is not None:
+            cache.move_to_end(key)
+            return surface
+
+        if particle.image is None:
+            surface = Surface((w, h), SRCALPHA)
+            surface.fill((*color, opacity))
+
+        else:
+            surface = transform.scale(particle.image, (w, h)).convert_alpha()
+
+            tint = Surface((w, h), SRCALPHA)
+            tint.fill((*color, 255))
+
+            surface.blit(tint, (0, 0), special_flags = BLEND_RGBA_MULT)
+
+            surface.set_alpha(opacity)
+
+        cache[key] = surface
+
+        if len(cache) > cls.maxCachedSurfaces:
+            cache.popitem(last = False)
+
+        return surface
+
+    @classmethod
+    def getSolidSurface(cls, w, h, color, opacity):
+        # quantise colour and opacity
+        r = color[0] & 0xE0
+        g = color[1] & 0xE0
+        b = color[2] & 0xE0
+        a = opacity & 0xE0
+
+        key = (w, h, r, g, b, a)
+
+        cache = cls.solidCache
+        surface = cache.get(key)
+
+        if surface is not None:
+            cache.move_to_end(key)
+            return surface
+
+        surface = Surface((w, h), SRCALPHA)
+        surface.fill((r, g, b, a))
+
+        cache[key] = surface
+
+        if len(cache) > cls.maxSolidCache:
+            cache.popitem(last=False)
+
+        return surface
 
     @classmethod
     def updateAll(cls, dt):
-        for i in cls.instances:
-            i.update(dt)
+        for system in cls.instances.copy():
+            system.update(dt)
     
-    @property
-    def x(self):
-        return self._x
-    
-    @x.setter
-    def x(self, value):
-        self._x = value
-        self.particles.x = value
-    
-    @property
-    def y(self):
-        return self._y
-    
-    @y.setter
-    def y(self, value):
-        self._y = value
-        self.particles.y = value
-
-    @property
-    def z(self):
-        return self._z
-    
-    @z.setter
-    def z(self, value):
-        self._z = value
-        self.particles.z = value
-    
-    @property
-    def hidden(self):
-        return self._hidden
-    
-    @hidden.setter
-    def hidden(self, value):
-        self._hidden = value
-        self.particles.hidden = value
+    @classmethod
+    def drawAll(cls, window):
+        for system in cls.instances.copy():
+            system.draw(window)
     
     @property
     def emissionSpeed(self):

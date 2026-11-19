@@ -34,6 +34,7 @@ class Items(Enum):
     UraniumRod = 21
     ReinforcedPlate = 22
     SimpleMechanicParts = 23
+    CopperWire = 24
 
 @dataclass
 class Recipe():
@@ -59,6 +60,14 @@ ironIngotRecipe = Recipe(
         Items.IronOre: 1,
         },
     result = [Items.IronIngot, 1],
+    time = 2,
+)
+
+copperIngotRecipe = Recipe(
+    ingredients = {
+        Items.CopperOre: 1,
+        },
+    result = [Items.CopperIngot, 1],
     time = 2,
 )
 
@@ -114,6 +123,16 @@ titaniumRodRecipe = Recipe(
         },
     result = [Items.TitaniumRod, 1],
     time = 1,
+)
+
+#* wire recipes
+
+copperWireRecipe = Recipe(
+    ingredients = {
+        Items.CopperIngot: 1,
+        },
+    result = [Items.CopperWire, 2],
+    time = 1.5,
 )
 
 #* frame recipe
@@ -175,7 +194,7 @@ class Machine():
     recipes: list[Recipe]
     speedMultiplier: float
     maxItems: int
-    size: tuple[int, int]                       # how many tiles the machine takes up, x by y from position
+    size: tuple[int, int]                        # how many tiles the machine takes up, x by y from position
     position: tuple[int, int] = (0, 0)
     rotation: Directions = Directions.North
     flipped: tuple[bool, bool] = (False, False)  # (flipped x, flipped y)
@@ -287,7 +306,7 @@ superConveyor = Transport(
 
 basicFurnace = Machine(
     type = "BasicFurnace",
-    recipes = [steelIngotRecipe, ironIngotRecipe],
+    recipes = [steelIngotRecipe, ironIngotRecipe, copperIngotRecipe],
     progress = 0,
     speedMultiplier = 1,
     maxItems = 5,
@@ -296,7 +315,7 @@ basicFurnace = Machine(
 
 advancedFurnace = Machine(
     type = "AdvancedFurnace",
-    recipes = [steelIngotRecipe, ironIngotRecipe],
+    recipes = [steelIngotRecipe, ironIngotRecipe, copperIngotRecipe],
     progress = 0,
     speedMultiplier = 2,
     maxItems = 5,
@@ -323,7 +342,7 @@ basicAssembler = Machine(
 
 basicExtruder = Machine(
     type = "BasicExtruder",
-    recipes = [ironRodRecipe, steelRodRecipe],
+    recipes = [ironRodRecipe, steelRodRecipe, copperWireRecipe],
     progress = 0,
     speedMultiplier = 1,
     maxItems = 5,

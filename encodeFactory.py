@@ -760,6 +760,8 @@ def _validateAndEncodeComponent(factory: fac.Factory, component, worldPos: tuple
         
         if material is not None:
             factory.updateProducer(componentid, material = fac.Items[material], efficiency = efficiency)
+        else:
+            factory.updateProducer(componentid, material = fac.Items.CopperOre, efficiency = efficiency)
 
     elif isinstance(component, fac.Machine):
         componentid = factory.addMachine(component)

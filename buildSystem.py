@@ -8,6 +8,7 @@ _ComponentTableImage = image.load("Images/UI/Buttons/ComponentTable.png").conver
 _SmallButtonImage = image.load("Images/UI/Buttons/SmallButtonPreset.png").convert_alpha()
 _LongButtonImage = image.load("Images/UI/Buttons/LongButtonPreset.png").convert_alpha()
 _ComponentBGImage = image.load("Images/UI/Buttons/ComponentIconBackground.png").convert_alpha()
+_PopupBGImage = image.load("Images/UI/Popup/Popup.png")
 
 _producers = {
     "BasicDrill": {
@@ -195,7 +196,7 @@ class GhostComponent(pygameui.Sprite):
 class BuildMenu():
     @classmethod
     def init(cls):
-        menux, menuy = 0, winy - _pixelToScreen(144)
+        menux, menuy = _pixelToScreen(1), winy - _pixelToScreen(145)
         menuw, menuh = _pixelToScreen(83), _pixelToScreen(128)
         
         #* class variables
@@ -219,29 +220,45 @@ class BuildMenu():
         #* ui elements
         # table of components that will hold selectable icons
         cls.ComponentMenu = pygameui.Image(0, 0, 
-                                            menuw, menuh,
-                                            image = _ComponentTableImage)
+                                            menuw, menuh, 2,
+                                            image = _ComponentTableImage,)
         
-        cls.ProducersButton = pygameui.TextImageButton(0, winy - _pixelToScreen(16),
-                                        _pixelToScreen(83), _pixelToScreen(16), 3,
+        cls.ProducersButton = pygameui.TextImageButton(_pixelToScreen(1), winy - _pixelToScreen(17),
+                                        _pixelToScreen(83), _pixelToScreen(16), 4,
                                         image = _LongButtonImage, text = "Producers",
                                         action = cls.menuSetProducers)
-        cls.MachinesButton = pygameui.TextImageButton(_pixelToScreen(83), winy - _pixelToScreen(16),
-                                        _pixelToScreen(83), _pixelToScreen(16), 3,
+        cls.MachinesButton = pygameui.TextImageButton(_pixelToScreen(84), winy - _pixelToScreen(17),
+                                        _pixelToScreen(83), _pixelToScreen(16), 4,
                                         image = _LongButtonImage, text = "Machines",
                                         action = cls.menuSetMachines)
-        cls.TransportsButton = pygameui.TextImageButton(_pixelToScreen(83 * 2), winy - _pixelToScreen(16),
-                                        _pixelToScreen(83), _pixelToScreen(16), 3,
+        cls.TransportsButton = pygameui.TextImageButton(_pixelToScreen(83 * 2 + 1), winy - _pixelToScreen(17),
+                                        _pixelToScreen(83), _pixelToScreen(16), 4,
                                         image = _LongButtonImage, text = "Transports",
                                         action = cls.menuSetTransports)
-        cls.whoknowsbutton = pygameui.TextImageButton(_pixelToScreen(83 * 3), winy - _pixelToScreen(16),
-                                        _pixelToScreen(83), _pixelToScreen(16), 3,
+        cls.whoknowsbutton = pygameui.TextImageButton(_pixelToScreen(83 * 3 + 1), winy - _pixelToScreen(17),
+                                        _pixelToScreen(83), _pixelToScreen(16), 4,
                                         image = _LongButtonImage, text = "Polluters")
+        
+        cls.BlueOutline1 = pygameui.UI(0, winy - _pixelToScreen(18),
+                                       _pixelToScreen(83 * 4 + 2), _pixelToScreen(18), 3)
+        cls.BlueOutline1.color = (91, 110, 225)
+        
+        cls.BlueOutline2 = pygameui.UI(-_pixelToScreen(1), -_pixelToScreen(1),
+                                       menuw + _pixelToScreen(2), menuh + _pixelToScreen(2), 1)
+        cls.BlueOutline2.color = (91, 110, 225)
+        
+        cls.ComponentPopupBackground = pygameui.Image(0, 0, _pixelToScreen(64), _pixelToScreen(32),
+                                                      image = _PopupBGImage)
+        
+        cls.ComponentPopup = pygameui.Parent(menux, menuy - _pixelToScreen(32), 3)
+        
+        cls.ComponentPopup.addChildren(cls.ComponentPopupBackground)
+        cls.ComponentPopup.rootChild = cls.ComponentPopupBackground
+        cls.ComponentPopup.hidden = True
         
         cls.MenuParent = pygameui.Parent(menux, menuy, 3)
         
-        
-        cls.MenuParent.addChildren(cls.ComponentMenu)
+        cls.MenuParent.addChildren(cls.ComponentMenu, cls.BlueOutline2)
         cls.MenuParent.rootChild = cls.ComponentMenu
         
         cls.UIItems = [cls.ComponentMenu, cls.ProducersButton, cls.MachinesButton, cls.TransportsButton, cls.whoknowsbutton]
@@ -261,15 +278,26 @@ class BuildMenu():
        cls.MenuParent.hidden ^= True
     
     @classmethod
+    def showHoverItem(cls, item, show):
+        cls.ComponentPopup.hidden = not show
+        
+        cls.ComponentPopup.destroyAllChildren()
+        
+        nameLabel = pygameui.Label(0, 0, 0, 0, text = item["displayName"])
+        cls.ComponentPopup.addChildren(nameLabel)
+    
+    @classmethod
     def addMenuItem(cls, item):
         width = _pixelToScreen(18)
         height = _pixelToScreen(18)
         
-        menuChildren = (len(cls.MenuParent.children) - 1) # minus 1 to account for the root child 
+        menuChildren = (len(cls.MenuParent.children) - 2) # minus 2 to account for the root child and the outline
         xoffset = (menuChildren % 4) * (width + cls.menupadx)
         yoffset = (menuChildren // 4) * (height + cls.menupady)
         
         action = lambda: cls.buildSetComponent(item["component"], item)
+        hoverAction = lambda: cls.showHoverItem(item, True)
+        hoveredOffAction = lambda: cls.showHoverItem(item, False)
         
         # draw the component icon to the bg image
         image = _ComponentBGImage.copy()
@@ -279,13 +307,16 @@ class BuildMenu():
                    (cls.menupadx / 4, cls.menupady / 4))
         
         menuItem = pygameui.ImageButton(xoffset + (cls.menupadx * 2), yoffset + (cls.menupady * 2),
-                                        width, height, 3, image = image, action = action)
+                                        width, height, 3, image = image,
+                                        action = action, hoverAction = hoverAction, hoveredOffAction = hoveredOffAction)
         
         cls.MenuParent.addChild(menuItem)
     
     @classmethod
     def menuSetProducers(cls):
-        cls.MenuParent.destroyAllChildren()
+        for child in list(cls.MenuParent.children):
+            if child not in (cls.ComponentMenu, cls.BlueOutline2):
+                cls.MenuParent.destroyChild(child)
         
         for producer in _producers.values():
             cls.addMenuItem(producer)
@@ -294,7 +325,9 @@ class BuildMenu():
     
     @classmethod
     def menuSetMachines(cls):
-        cls.MenuParent.destroyAllChildren()
+        for child in list(cls.MenuParent.children):
+            if child not in (cls.ComponentMenu, cls.BlueOutline2):
+                cls.MenuParent.destroyChild(child)
         
         for machine in _machines.values():
             cls.addMenuItem(machine)
@@ -303,7 +336,9 @@ class BuildMenu():
 
     @classmethod
     def menuSetTransports(cls):
-        cls.MenuParent.destroyAllChildren()
+        for child in list(cls.MenuParent.children):
+            if child not in (cls.ComponentMenu, cls.BlueOutline2):
+                cls.MenuParent.destroyChild(child)
         
         for transport in _transports.values():
             cls.addMenuItem(transport)
@@ -311,12 +346,12 @@ class BuildMenu():
         cls.showMenu()
     
     @classmethod
-    def buildShowGhost(cls):
+    def buildShowGhost(cls):            
         if cls.buildGhost is not None:
             cls.buildGhost.x, cls.buildGhost.y = dec.worldToSreen(cls.buildingPosition)
     
     @classmethod
-    def buildUpdateGhost(cls, component: dict | None = None):
+    def buildUpdateGhost(cls, component: dict | None = None):            
         if cls.buildGhost is not None:
             cls.buildGhost.destroy()
         

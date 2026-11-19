@@ -90,6 +90,8 @@ _SteelRodSprite    = image.load("Images/Item/Rod/SteelRod.png").convert_alpha()
 _TitaniumRodSprite = image.load("Images/Item/Rod/TitaniumRod.png").convert_alpha()
 _UraniumRodSprite  = image.load("Images/Item/Rod/UraniumRod.png").convert_alpha()
 
+_CopperWireSprite = image.load("Images/Item/Wire/CopperWire.png").convert_alpha()
+
 _SteelFrameSprite = image.load("Images/Item/Frame/Frame.png").convert_alpha()
 
 _IronGearSprite   = image.load("Images/Item/Gear/IronGear.png").convert_alpha()
@@ -111,6 +113,7 @@ class Producer(pygameui.AnimatableSprite):
         materialColor = {
             "Coal":       (10, 10, 10),
             "IronOre":    (240, 240, 240),
+            "CopperOre":  (233, 133, 55),
             "UraniumOre": (73, 130, 82),
             None: None
         }[material]
@@ -124,112 +127,113 @@ class Producer(pygameui.AnimatableSprite):
                 self.startAnimation("drill", 8)
                 
                 multiplier = (TILESIZE / 16)
-                
-                if materialColor is not None:
-                    # dirt
-                    self.particles.append(pygameui.ParticleSystem())
-                    self.particles[0].particleSpace = "World"
                     
-                    self.particles[0].maxLifetime = 3
-                    self.particles[0].maxLifetimeUncerainty = 1
+                if multiplier > 2:
+                    if materialColor is not None:
+                        # dirt
+                        self.particles.append(pygameui.ParticleSystem())
+                        self.particles[0].particleSpace = "World"
+                        
+                        self.particles[0].maxLifetime = 3
+                        self.particles[0].maxLifetimeUncerainty = 1
+                        
+                        self.particles[0].startSize = 1
+                        self.particles[0].endSize = 0
+                        self.particles[0].sizeUncertainty = 1.5
+                        
+                        self.particles[0].startOpacity = 255
+                        self.particles[0].endOpacity = 0
+                        
+                        self.particles[0].startSpeed = 7.5 * multiplier
+                        self.particles[0].endSpeed = 3.75 * multiplier
+                        self.particles[0].speedUncertainty = 10
+                        
+                        self.particles[0].startColor = (103, 77, 53)
+                        self.particles[0].endColor = (103, 77, 53)
+                        self.particles[0].startColorUncertainty = 10
+                        self.particles[0].endColorUncertainty = 10
+                        
+                        self.particles[0].burstEmission = int(1.5 * multiplier)
+                        self.particles[0].burstUncertainty = 2
+                        self.particles[0].emissionSpeed = 5 / multiplier
+                        self.particles[0].emissionSpeedUncertainty = 0.2
+                        self.particles[0].emissionType = "Area"
+                        self.particles[0].emissionArcWidth = 360
+                        self.particles[0].emissionArea = (20 * multiplier, 20 * multiplier)
+                        
+                        self.particles[0].xOffset, self.particles[0].yOffset = (5 * multiplier, 5 * multiplier)
+                        
+                        self.particles[0].size = (1.25 * multiplier, 1.25 * multiplier)
+                        
+                        # smoke
+                        self.particles.append(pygameui.ParticleSystem())
+                        self.particles[1].particleSpace = "World"
+                        
+                        self.particles[1].maxLifetime = 3
+                        self.particles[1].maxLifetimeUncerainty = 1
+                        
+                        self.particles[1].startSize = 0
+                        self.particles[1].endSize = 2
+                        self.particles[1].sizeUncertainty = 0
+                        
+                        self.particles[1].startOpacity = 255
+                        self.particles[1].endOpacity = 0
+                        
+                        self.particles[1].startSpeed = 7.5 * multiplier
+                        self.particles[1].endSpeed = 1.25 * multiplier
+                        self.particles[1].speedUncertainty = 2
+                        
+                        self.particles[1].startColor = (0, 0, 0)
+                        self.particles[1].endColor = (255, 255, 255)
+                        self.particles[1].startColorUncertainty = 10
+                        self.particles[1].endColorUncertainty = 10
+                        
+                        self.particles[1].burstEmission = int(0.5 * multiplier)
+                        self.particles[1].burstUncertainty = 1
+                        self.particles[1].emissionSpeed = 2.8 / multiplier
+                        self.particles[1].emissionSpeedUncertainty = 0.2
+                        self.particles[1].emissionType = "Area"
+                        self.particles[1].emissionArcWidth = 360
+                        self.particles[1].emissionArea = (4 * multiplier, 4 * multiplier)
+                        
+                        self.particles[1].xOffset, self.particles[1].yOffset = (14 * multiplier, 14 * multiplier)
+                        
+                        self.particles[1].size = (2.5 * multiplier, 2.5 * multiplier)
+                        
+                        # material
+                        self.particles.append(pygameui.ParticleSystem())
+                        self.particles[2].particleSpace = "World"
+                        
+                        self.particles[2].maxLifetime = 3
+                        self.particles[2].maxLifetimeUncerainty = 1
+                        
+                        self.particles[2].startSize = 1
+                        self.particles[2].endSize = 0
+                        self.particles[2].sizeUncertainty = 1.5
+                        
+                        self.particles[2].startOpacity = 255
+                        self.particles[2].endOpacity = 0
+                        
+                        self.particles[2].startSpeed = 7.5 * multiplier
+                        self.particles[2].endSpeed = 3.75 * multiplier
+                        self.particles[2].speedUncertainty = 10
+                        
+                        self.particles[2].startColor = materialColor
+                        self.particles[2].endColor = materialColor
+                        self.particles[2].startColorUncertainty = 10
+                        self.particles[2].endColorUncertainty = 10
                     
-                    self.particles[0].startSize = 1
-                    self.particles[0].endSize = 0
-                    self.particles[0].sizeUncertainty = 1.5
-                    
-                    self.particles[0].startOpacity = 255
-                    self.particles[0].endOpacity = 0
-                    
-                    self.particles[0].startSpeed = 7.5 * multiplier
-                    self.particles[0].endSpeed = 3.75 * multiplier
-                    self.particles[0].speedUncertainty = 10
-                    
-                    self.particles[0].startColor = (103, 77, 53)
-                    self.particles[0].endColor = (103, 77, 53)
-                    self.particles[0].startColorUncertainty = 10
-                    self.particles[0].endColorUncertainty = 10
-                    
-                    self.particles[0].burstEmission = 8
-                    self.particles[0].burstUncertainty = 3
-                    self.particles[0].emissionSpeed = 0.5
-                    self.particles[0].emissionSpeedUncertainty = 0.2
-                    self.particles[0].emissionType = "Area"
-                    self.particles[0].emissionArcWidth = 360
-                    self.particles[0].emissionArea = (20 * multiplier, 20 * multiplier)
-                    
-                    self.particles[0].xOffset, self.particles[0].yOffset = (5 * multiplier, 5 * multiplier)
-                    
-                    self.particles[0].size = (1.25 * multiplier, 1.25 * multiplier)
-                    
-                    # smoke
-                    self.particles.append(pygameui.ParticleSystem())
-                    self.particles[1].particleSpace = "World"
-                    
-                    self.particles[1].maxLifetime = 3
-                    self.particles[1].maxLifetimeUncerainty = 1
-                    
-                    self.particles[1].startSize = 0
-                    self.particles[1].endSize = 2
-                    self.particles[1].sizeUncertainty = 0
-                    
-                    self.particles[1].startOpacity = 255
-                    self.particles[1].endOpacity = 0
-                    
-                    self.particles[1].startSpeed = 7.5 * multiplier
-                    self.particles[1].endSpeed = 1.25 * multiplier
-                    self.particles[1].speedUncertainty = 2
-                    
-                    self.particles[1].startColor = (0, 0, 0)
-                    self.particles[1].endColor = (255, 255, 255)
-                    self.particles[1].startColorUncertainty = 10
-                    self.particles[1].endColorUncertainty = 10
-                    
-                    self.particles[1].burstEmission = 4
-                    self.particles[1].burstUncertainty = 2
-                    self.particles[1].emissionSpeed = 0.7
-                    self.particles[1].emissionSpeedUncertainty = 0.2
-                    self.particles[1].emissionType = "Area"
-                    self.particles[1].emissionArcWidth = 360
-                    self.particles[1].emissionArea = (4 * multiplier, 4 * multiplier)
-                    
-                    self.particles[1].xOffset, self.particles[1].yOffset = (14 * multiplier, 14 * multiplier)
-                    
-                    self.particles[1].size = (2.5 * multiplier, 2.5 * multiplier)
-                    
-                    # material
-                    self.particles.append(pygameui.ParticleSystem())
-                    self.particles[2].particleSpace = "World"
-                    
-                    self.particles[2].maxLifetime = 3
-                    self.particles[2].maxLifetimeUncerainty = 1
-                    
-                    self.particles[2].startSize = 1
-                    self.particles[2].endSize = 0
-                    self.particles[2].sizeUncertainty = 1.5
-                    
-                    self.particles[2].startOpacity = 255
-                    self.particles[2].endOpacity = 0
-                    
-                    self.particles[2].startSpeed = 7.5 * multiplier
-                    self.particles[2].endSpeed = 3.75 * multiplier
-                    self.particles[2].speedUncertainty = 10
-                    
-                    self.particles[2].startColor = materialColor
-                    self.particles[2].endColor = materialColor
-                    self.particles[2].startColorUncertainty = 10
-                    self.particles[2].endColorUncertainty = 10
-                
-                    self.particles[2].burstEmission = 3
-                    self.particles[2].burstUncertainty = 3
-                    self.particles[2].emissionSpeed = 0.5
-                    self.particles[2].emissionSpeedUncertainty = 0.2
-                    self.particles[2].emissionType = "Area"
-                    self.particles[2].emissionArcWidth = 360
-                    self.particles[2].emissionArea = (20 * multiplier, 20 * multiplier)
-                    
-                    self.particles[2].xOffset, self.particles[0].yOffset = (5 * multiplier, 5 * multiplier)
-                    
-                    self.particles[2].size = (1.25 * multiplier, 1.25 * multiplier)
+                        self.particles[2].burstEmission = int(0.5 * multiplier)
+                        self.particles[2].burstUncertainty = 3
+                        self.particles[2].emissionSpeed = 2 / multiplier
+                        self.particles[2].emissionSpeedUncertainty = 0.2
+                        self.particles[2].emissionType = "Area"
+                        self.particles[2].emissionArcWidth = 360
+                        self.particles[2].emissionArea = (20 * multiplier, 20 * multiplier)
+                        
+                        self.particles[2].xOffset, self.particles[0].yOffset = (5 * multiplier, 5 * multiplier)
+                        
+                        self.particles[2].size = (1.25 * multiplier, 1.25 * multiplier)
             case _:
                 raise ValueError("unknown producer type")
         
@@ -327,77 +331,78 @@ class Machine(pygameui.AnimatableSprite):
                 
                 multiplier = (TILESIZE / 16)
                 
-                # fire
-                self.particles.append(pygameui.ParticleSystem())
-                self.particles[0].particleSpace = "World"
-                #self.particles[0].particleImage = _JoshParticle
-                
-                self.particles[0].maxLifetime = 3
-                self.particles[0].maxLifetimeUncerainty = 1
-                
-                self.particles[0].startSize = 1
-                self.particles[0].endSize = 0
-                self.particles[0].sizeUncertainty = 0.7
-                
-                self.particles[0].startOpacity = 255
-                self.particles[0].endOpacity = 0
-                
-                self.particles[0].startSpeed = 7.5 * multiplier
-                self.particles[0].endSpeed = 3.75 * multiplier
-                self.particles[0].speedUncertainty = 10
-                
-                self.particles[0].startColor = (255, 135, 10)
-                self.particles[0].endColor = (205, 20, 5)
-                self.particles[0].startColorUncertainty = 80
-                self.particles[0].endColorUncertainty = 80
-                
-                self.particles[0].burstEmission = 8
-                self.particles[0].burstUncertainty = 3
-                self.particles[0].emissionSpeed = 0.5
-                self.particles[0].emissionSpeedUncertainty = 0.2
-                self.particles[0].emissionType = "Area"
-                self.particles[0].emissionArcWidth = 360
-                self.particles[0].emissionArea = (12 * multiplier, 12 * multiplier)
-                
-                self.particles[0].xOffset, self.particles[0].yOffset = (9 * multiplier, 9 * multiplier)
-                
-                self.particles[0].size = (1.25 * multiplier, 1.25 * multiplier)
-                
-                # smoke
-                self.particles.append(pygameui.ParticleSystem())
-                self.particles[1].particleSpace = "World"
-                #self.particles[1].particleImage = _EldarParticle
-                
-                self.particles[1].maxLifetime = 3
-                self.particles[1].maxLifetimeUncerainty = 1
-                
-                self.particles[1].startSize = 0
-                self.particles[1].endSize = 3
-                self.particles[1].sizeUncertainty = 0
-                
-                self.particles[1].startOpacity = 255
-                self.particles[1].endOpacity = 0
-                
-                self.particles[1].startSpeed = 7.5 * multiplier
-                self.particles[1].endSpeed = 1.25 * multiplier
-                self.particles[1].speedUncertainty = 2
-                
-                self.particles[1].startColor = (0, 0, 0)
-                self.particles[1].endColor = (255, 255, 255)
-                self.particles[1].startColorUncertainty = 10
-                self.particles[1].endColorUncertainty = 10
-                
-                self.particles[1].burstEmission = 8
-                self.particles[1].burstUncertainty = 3
-                self.particles[1].emissionSpeed = 0.5
-                self.particles[1].emissionSpeedUncertainty = 0.2
-                self.particles[1].emissionType = "Area"
-                self.particles[1].emissionArcWidth = 360
-                self.particles[1].emissionArea = (12 * multiplier, 12 * multiplier)
-                
-                self.particles[1].xOffset, self.particles[1].yOffset = (9 * multiplier, 9 * multiplier)
-                
-                self.particles[1].size = (2.5 * multiplier, 2.5 * multiplier)
+                if multiplier > 2:
+                    # fire
+                    self.particles.append(pygameui.ParticleSystem())
+                    self.particles[0].particleSpace = "World"
+                    #self.particles[0].particleImage = _JoshParticle
+                    
+                    self.particles[0].maxLifetime = 3
+                    self.particles[0].maxLifetimeUncerainty = 1
+                    
+                    self.particles[0].startSize = 1
+                    self.particles[0].endSize = 0
+                    self.particles[0].sizeUncertainty = 0.7
+                    
+                    self.particles[0].startOpacity = 255
+                    self.particles[0].endOpacity = 0
+                    
+                    self.particles[0].startSpeed = 7.5 * multiplier
+                    self.particles[0].endSpeed = 3.75 * multiplier
+                    self.particles[0].speedUncertainty = 10
+                    
+                    self.particles[0].startColor = (255, 135, 10)
+                    self.particles[0].endColor = (205, 20, 5)
+                    self.particles[0].startColorUncertainty = 80
+                    self.particles[0].endColorUncertainty = 80
+                    
+                    self.particles[0].burstEmission = int(1.5 * multiplier)
+                    self.particles[0].burstUncertainty = 2
+                    self.particles[0].emissionSpeed = 2 / multiplier
+                    self.particles[0].emissionSpeedUncertainty = 0.2
+                    self.particles[0].emissionType = "Area"
+                    self.particles[0].emissionArcWidth = 360
+                    self.particles[0].emissionArea = (12 * multiplier, 12 * multiplier)
+                    
+                    self.particles[0].xOffset, self.particles[0].yOffset = (9 * multiplier, 9 * multiplier)
+                    
+                    self.particles[0].size = (1.25 * multiplier, 1.25 * multiplier)
+                    
+                    # smoke
+                    self.particles.append(pygameui.ParticleSystem())
+                    self.particles[1].particleSpace = "World"
+                    #self.particles[1].particleImage = _EldarParticle
+                    
+                    self.particles[1].maxLifetime = 3
+                    self.particles[1].maxLifetimeUncerainty = 1
+                    
+                    self.particles[1].startSize = 0
+                    self.particles[1].endSize = 3
+                    self.particles[1].sizeUncertainty = 0
+                    
+                    self.particles[1].startOpacity = 255
+                    self.particles[1].endOpacity = 0
+                    
+                    self.particles[1].startSpeed = 7.5 * multiplier
+                    self.particles[1].endSpeed = 1.25 * multiplier
+                    self.particles[1].speedUncertainty = 2
+                    
+                    self.particles[1].startColor = (0, 0, 0)
+                    self.particles[1].endColor = (255, 255, 255)
+                    self.particles[1].startColorUncertainty = 10
+                    self.particles[1].endColorUncertainty = 10
+                    
+                    self.particles[1].burstEmission = int(1.5 * multiplier)
+                    self.particles[1].burstUncertainty = 2
+                    self.particles[1].emissionSpeed = 2 / multiplier
+                    self.particles[1].emissionSpeedUncertainty = 0.2
+                    self.particles[1].emissionType = "Area"
+                    self.particles[1].emissionArcWidth = 360
+                    self.particles[1].emissionArea = (12 * multiplier, 12 * multiplier)
+                    
+                    self.particles[1].xOffset, self.particles[1].yOffset = (9 * multiplier, 9 * multiplier)
+                    
+                    self.particles[1].size = (2.5 * multiplier, 2.5 * multiplier)
                 
             case "BasicPress":
                 self.changeImage(_BasicPressFrames[0])
@@ -428,40 +433,41 @@ class Machine(pygameui.AnimatableSprite):
                 
                 multiplier = (TILESIZE / 16)
                 
-                self.particles.append(pygameui.ParticleSystem())
-                self.particles[0].particleSpace = "World"
-                #self.particles.particleImage = _JoshParticle
-                
-                self.particles[0].maxLifetime = 6
-                self.particles[0].maxLifetimeUncerainty = 1
-                
-                self.particles[0].startSize = 1
-                self.particles[0].endSize = 0
-                self.particles[0].sizeUncertainty = 0.7
-                
-                self.particles[0].startOpacity = 255
-                self.particles[0].endOpacity = 0
-                
-                self.particles[0].startSpeed = 3.75 * multiplier
-                self.particles[0].endSpeed = 7.5 * multiplier
-                self.particles[0].speedUncertainty = 10
-                
-                self.particles[0].startColor = (50, 255, 100)
-                self.particles[0].endColor = (0, 0, 0)
-                self.particles[0].startColorUncertainty = 50
-                self.particles[0].endColorUncertainty = 20
-                
-                self.particles[0].burstEmission = 4
-                self.particles[0].burstUncertainty = 3
-                self.particles[0].emissionSpeed = 0.5
-                self.particles[0].emissionSpeedUncertainty = 0.2
-                self.particles[0].emissionType = "Area"
-                self.particles[0].emissionArcWidth = 360
-                self.particles[0].emissionArea = (12 * multiplier, 12 * multiplier)
-                
-                self.particles[0].xOffset, self.particles[0].yOffset = (8 * multiplier, 8 * multiplier)
-                
-                self.particles[0].size = (1.25 * multiplier, 1.25 * multiplier)
+                if multiplier > 2:
+                    self.particles.append(pygameui.ParticleSystem())
+                    self.particles[0].particleSpace = "World"
+                    #self.particles.particleImage = _JoshParticle
+                    
+                    self.particles[0].maxLifetime = 6
+                    self.particles[0].maxLifetimeUncerainty = 1
+                    
+                    self.particles[0].startSize = 1
+                    self.particles[0].endSize = 0
+                    self.particles[0].sizeUncertainty = 0.7
+                    
+                    self.particles[0].startOpacity = 255
+                    self.particles[0].endOpacity = 0
+                    
+                    self.particles[0].startSpeed = 3.75 * multiplier
+                    self.particles[0].endSpeed = 7.5 * multiplier
+                    self.particles[0].speedUncertainty = 10
+                    
+                    self.particles[0].startColor = (50, 255, 100)
+                    self.particles[0].endColor = (0, 0, 0)
+                    self.particles[0].startColorUncertainty = 50
+                    self.particles[0].endColorUncertainty = 20
+                    
+                    self.particles[0].burstEmission = int(0.5 * multiplier)
+                    self.particles[0].burstUncertainty = 2
+                    self.particles[0].emissionSpeed = 2 / multiplier
+                    self.particles[0].emissionSpeedUncertainty = 0.2
+                    self.particles[0].emissionType = "Area"
+                    self.particles[0].emissionArcWidth = 360
+                    self.particles[0].emissionArea = (12 * multiplier, 12 * multiplier)
+                    
+                    self.particles[0].xOffset, self.particles[0].yOffset = (8 * multiplier, 8 * multiplier)
+                    
+                    self.particles[0].size = (1.25 * multiplier, 1.25 * multiplier)
                 
             case "AdvancedCutter":
                 self.changeImage(_AdvancedCutterFrames[0])
@@ -569,38 +575,39 @@ class Item(pygameui.Sprite):
                 
                 multiplier = (TILESIZE / 16)
                 
-                self.particles = pygameui.ParticleSystem()
-                self.particles.particleSpace = "World"
-                #self.particles.particleImage = _EldarParticle
+                if multiplier > 2:
+                    self.particles = pygameui.ParticleSystem()
+                    self.particles.particleSpace = "World"
+                    #self.particles.particleImage = _EldarParticle
+                    
+                    self.particles.maxLifetime = 3
+                    self.particles.maxLifetimeUncerainty = 1
+                    
+                    self.particles.startSize = 1
+                    self.particles.endSize = 0
+                    self.particles.sizeUncertainty = 0.7
+                    
+                    self.particles.startOpacity = 255
+                    self.particles.endOpacity = 0
+                    
+                    self.particles.startSpeed = 1.25 * multiplier
+                    self.particles.endSpeed = 5 * multiplier
+                    self.particles.speedUncertainty = 10
+                    
+                    self.particles.startColor = (50, 255, 100)
+                    self.particles.endColor = (0, 0, 0)
+                    self.particles.startColorUncertainty = 50
+                    self.particles.endColorUncertainty = 20
+                    
+                    self.particles.burstEmission = int(0.5 * multiplier)
+                    self.particles.burstUncertainty = 1
+                    self.particles.emissionSpeed = 2 / multiplier
+                    self.particles.emissionSpeedUncertainty = 0.2
+                    self.particles.emissionType = "Area"
+                    self.particles.emissionArcWidth = 360
+                    self.particles.emissionArea = (8 * multiplier, 8 * multiplier)
                 
-                self.particles.maxLifetime = 3
-                self.particles.maxLifetimeUncerainty = 1
-                
-                self.particles.startSize = 1
-                self.particles.endSize = 0
-                self.particles.sizeUncertainty = 0.7
-                
-                self.particles.startOpacity = 255
-                self.particles.endOpacity = 0
-                
-                self.particles.startSpeed = 1.25 * multiplier
-                self.particles.endSpeed = 5 * multiplier
-                self.particles.speedUncertainty = 10
-                
-                self.particles.startColor = (50, 255, 100)
-                self.particles.endColor = (0, 0, 0)
-                self.particles.startColorUncertainty = 50
-                self.particles.endColorUncertainty = 20
-                
-                self.particles.burstEmission = 2
-                self.particles.burstUncertainty = 1
-                self.particles.emissionSpeed = 0.5
-                self.particles.emissionSpeedUncertainty = 0.2
-                self.particles.emissionType = "Area"
-                self.particles.emissionArcWidth = 360
-                self.particles.emissionArea = (8 * multiplier, 8 * multiplier)
-                
-                self.particles.size = (1.25 * multiplier, 1.25 * multiplier)
+                    self.particles.size = (1.25 * multiplier, 1.25 * multiplier)
                 
             case fac.Items.SteelIngot:
                 self.changeImage(_SteelIngotSprite)
@@ -628,6 +635,9 @@ class Item(pygameui.Sprite):
                 self.changeImage(_TitaniumRodSprite)
             case fac.Items.UraniumRod:
                 self.changeImage(_UraniumRodSprite)   
+                
+            case fac.Items.CopperWire:
+                self.changeImage(_CopperWireSprite)
             
             case fac.Items.SteelFrame:
                 self.changeImage(_SteelFrameSprite)
@@ -1150,7 +1160,7 @@ def decreaseTileSize() -> bool:
     global TILESIZE
     
     if TILESIZE > 16:
-        TILESIZE -= 8
+        TILESIZE -= 16
         return True
     else:
         return False
@@ -1161,7 +1171,7 @@ def increaseTileSize() -> bool:
     global TILESIZE
     
     if TILESIZE < 64:
-        TILESIZE += 8
+        TILESIZE += 16
         return True
     else:
         return False
